@@ -5,7 +5,7 @@ from codegen import OClass, OMethod, OCFile, OMacro, OArg, PRIVATE
 from parseOrg import ParseOrg
 
 def writeFile(c):
-    f = OCFile(c.name, "../msp430")
+    f = OCFile(c.name, "../msp430/")
     c.genC(f)
     f.close()
 
@@ -33,14 +33,21 @@ def gen_class(cname, methods):
 #
 p = ParseOrg("launchpad.org")
 c = OClass("config")
+m = OMethod("port_init", "void")
+c << m
 for i in [1,2]:
+    pdir = []
+    pname = "P"+str(i)
     for bit,direction,name in p.parse()[1:]:
         if direction == "OUT":
             c << OMacro("set_"+name, "P"+str(i)+"OUT |= BIT"+str(bit))
             c << OMacro("clr_"+name, "P"+str(i)+"OUT &= ~BIT"+ str(bit))
             c << OMacro("toggle_"+name, "P"+str(i)+"OUT ^= BIT"+ str(bit))
+            pdir.append("BIT"+str(bit))
+    if len(pdir) > 0:
+        m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 writeFile(c)
-
+exit(0)
 
 # Generate some template classes
 #

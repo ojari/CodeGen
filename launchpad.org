@@ -1,25 +1,26 @@
 
 * Ports
 
-| PORT1 | Direction | Desc      |
+| PORT1 | Direction | Desc       |
+|-------+-----------+------------|
+|     0 | OUT       | LED_GREEN  |
+|     1 |           |            |
+|     2 |           |            |
+|     3 |           |            |
+|     4 |           |            |
+|     5 | OUT       | LCD_RS     |
+|     6 | OUT       | LED_RED    |
+|     7 | OUT       | LCD_ENABLE |
+
+
+
+| PORT2 | Direction | Desc      |
 |-------+-----------+-----------|
-|     0 | OUT       | LED_GREEN |
+|     0 |           |           |
 |     1 |           |           |
-|     2 |           |           |
-|     3 |           |           |
-|     4 |           |           |
-|     5 |           |           |
-|     6 | OUT       | LED_RED   |
-|     7 |           |           |
+|     2 | OUT       | LCD_DATA1 |
+|     3 | OUT       | LCD_DATA2 |
+|     4 | OUT       | LCD_DATA3 |
+|     5 | OUT       | LCD_DATA4 |
 
-
-
-| PORT2 | Direction | Desc |
-|-------+-----------+------|
-|     0 |           |      |
-|     1 |           |      |
-|     2 |           |      |
-|     3 |           |      |
-|     4 |           |      |
-|     5 |           |      |
 

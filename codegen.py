@@ -113,7 +113,7 @@ class OMethod(OBase):
         f.c << "}"
         
         if PUBLIC in self.mods:
-            f.h << "extern " + self.ctype + " " + funcname + " " + self.arg()
+            f.h << "extern " + self.ctype + " " + funcname + " " + self.arg() + ";"
 
     def __lshift__(self, s):
         self.code.append(s)
