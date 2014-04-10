@@ -1,3 +1,7 @@
+#
+# Copyright 2014 Jari Ojanen
+#
+
 PRIVATE   = "private"
 PROTECTED = "protected"
 PUBLIC    = "public"
@@ -23,14 +27,15 @@ class OFile(object):
     def addCsIncludes(self, includes):
         for inc in includes:
             self.f.write("using "+inc+";\n")
+        self.f.write("\n")
 
     def close(self):
         self.f.close()
     
 class OCFile(object):
-    def __init__(self, fbase):
-        self.c = OFile(fbase+".c")
-        self.h = OFile(fbase+".h")
+    def __init__(self, fbase, fpath=""):
+        self.c = OFile(fpath+fbase+".c")
+        self.h = OFile(fpath+fbase+".h")
 
         self.h << "#ifndef _"+fbase.upper()+"_H"
         self.h << "#define _"+fbase.upper()+"_H"
@@ -65,6 +70,17 @@ class OArg(OBase):
 
     def argDef(self):
         return self.ctype + " " + self.name
+
+class OMacro(OBase):
+    def __init__(self, name, value):
+        OBase.__init__(self, name, "", {PUBLIC})
+        self.value = value
+
+    def genC(self, f):
+        if PUBLIC in self.mods:
+            f.h << "#define " + self.name + " " + self.value
+        else:
+            f.c << "#define " + self.name + " " + self.value
 
 class OMethod(OBase):
     def __init__(self, name, ctype, args=[], mods={PUBLIC}):
