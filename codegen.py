@@ -10,9 +10,12 @@ TEST      = "test"
 GETTER    = "getter"
 SETTER    = "setter"
 
+def q(s):
+    return "\""+s+"\""
 
 class OFile(object):
     def __init__(self, fname):
+        print("generating "+fname+"...")
         self.f = open(fname, "wt")
         self.indent = 0
 
@@ -33,7 +36,7 @@ class OFile(object):
         self.f.close()
     
 class OCFile(object):
-    def __init__(self, fbase, fpath=""):
+    def __init__(self, fbase, fpath="", includes=[]):
         self.c = OFile(fpath+fbase+".c")
         self.h = OFile(fpath+fbase+".h")
 
@@ -41,7 +44,11 @@ class OCFile(object):
         self.h << "#define _"+fbase.upper()+"_H"
         self.h << ""
 
-        self.c << "#include \""+fbase+".hpp\""
+        for inc in includes + [fbase+".h"]:
+            if inc.startswith("<"):
+                self.c << "#include "+inc
+            else:
+                self.c << "#include "+q(inc)
 
     def close(self):
         self.h << ""

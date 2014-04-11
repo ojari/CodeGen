@@ -6,7 +6,7 @@
 |     0 | OUT       | LED_GREEN  |
 |     1 |           |            |
 |     2 |           |            |
-|     3 |           |            |
+|     3 | IN/OUT    | OW1        |
 |     4 |           |            |
 |     5 | OUT       | LCD_RS     |
 |     6 | OUT       | LED_RED    |
