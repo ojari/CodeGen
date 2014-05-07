@@ -1,12 +1,18 @@
 #
 # Copyright 2014 Jari Ojanen
 #
-from codegen import OClass, OMethod, OCFile, OMacro, OArg, PRIVATE
+from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
 from parseOrg import ParseOrg
 
 def writeFile(c):
     f = OCFile(c.name, "../msp430/", includes=["<msp430.h>"])
     c.genC(f)
+    f.close()
+
+def writeFile2(c1,c2):
+    f = OCFile(c1.name, "../msp430/", includes=["<msp430.h>"])
+    c1.genC(f)
+    c2.genC(f)
     f.close()
 
 
@@ -19,10 +25,28 @@ class Byte(OArg):
         OArg.__init__(self, name, "byte")
 
 
-def gen_class(cname, methods):
+def gen_class(cname, attribs, methods):
     c = OClass(cname)
-    for mname, args in methods:
-        m = OMethod(mname, "void", args)
+    s = OStruct(cname)
+    cargs = []
+    ccode = []
+    tname = cname+"_t"
+    for name, tpe in attribs:
+        if name[0]=="-":
+            name = name[1:]
+        else:
+            cargs.append(OArg(name, tpe))
+            ccode.append("self->"+name+" = "+name+";")
+        s << OArg(name,tpe)
+                        
+    for mname, args, tpe in methods:
+        if mname == "init":
+            args = cargs
+        args = [OArg("*self", tname)] + args
+        m = OMethod(mname, tpe, args)
+        if mname == "init":
+            for cl in ccode:
+                m << cl
         if mname.startswith("_"):
             m = OMethod(mname[1:], "void", args, mods={PRIVATE})
         c << m
@@ -33,6 +57,7 @@ def gen_class(cname, methods):
 #
 p = ParseOrg("launchpad.org")
 c = OClass("port")
+sc = OClass("port_sim")
 m = OMethod("init", "void")
 c << m
 for i in [1,2]:
@@ -45,6 +70,11 @@ for i in [1,2]:
             c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
             c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
             pdir.append(bname)
+
+            sc << OMacro("set_"+name,   "bit_set(\""+name+"\")")
+            sc << OMacro("clr_"+name,   "bit_clr(\""+name+"\")")
+            sc << OMacro("toggle_"+name,"bit_toggle(\""+name+"\")")
+
         if direction in ["IN/OUT"]:
             c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
             c << OMacro("out_"+name, pname+"DIR |= "+bname)
@@ -53,6 +83,20 @@ for i in [1,2]:
     if len(pdir) > 0:
         m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 writeFile(c)
+writeFile(sc)
+
+gen_class("fifo", 
+          [[ "bufPtr", "void*"],
+           [ "bufSize", "size_t"],
+           [ "recSize", "size_t"],
+           [ "-pushPtr", "void*"],
+           [ "-popPtr",  "void*"]],
+          [[ "init", [], "void"],
+           [ "push", [OArg("data", "void*")], "void"],
+           [ "pop",  [], "void*"]
+       ])
+
+
 exit(0)
 
 # Generate some template classes

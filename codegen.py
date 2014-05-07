@@ -72,6 +72,9 @@ class OArg(OBase):
     def __init__(self, name, ctype, mods={PRIVATE}):
         OBase.__init__(self, name, ctype, mods)
 
+    def genC(self, f):
+        f.h << self.ctype + " " + self.name + ";"
+
     def genCS(self, f):
         f << self.csMods() + self.ctype + " " + self.name + ";"
 
@@ -151,6 +154,26 @@ class OClass(OBase):
 
     def genPY(self, f):
         pass
+
+class OStruct(OBase):
+    def __init__(self, name, mods={PUBLIC}):
+        OBase.__init__(self, name, name, mods)
+        self.members = []
+
+    def __lshift__(self, m):
+        m.parent = self
+        self.members.append(m)
+        return self
+
+    def genC(self, f):
+        print(f)
+        f.h << "typedef struct"
+        f.h << "{"
+        for m in self.members:
+            m.genC(f)
+        f.h << "}"
+        f.h << self.name + "_t;"
+
         
 class OTestClass(OClass):
     def __init__(self, name):

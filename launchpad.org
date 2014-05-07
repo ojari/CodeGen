@@ -8,9 +8,11 @@
 |     2 |           |            |
 |     3 | IN/OUT    | OW1        |
 |     4 |           |            |
-|     5 | OUT       | LCD_RS     |
-|     6 | OUT       | LED_RED    |
+|     5 | OUT       |            |
+|     6 | OUT       | LCD_RS     |
 |     7 | OUT       | LCD_ENABLE |
+
+PORT1.6 = LED_RED
 
 
 
