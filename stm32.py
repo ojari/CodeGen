@@ -1,0 +1,102 @@
+#
+# Copyright 2014 Jari Ojanen
+#
+from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
+from parseOrg import ParseOrg
+
+def writeFile(c):
+    f = OCFile(c.name, "../stm32/")
+    c.genC(f)
+    f.close()
+
+def writeFile2(c1,c2):
+    f = OCFile(c1.name, "../stm32/")
+    c1.genC(f)
+    c2.genC(f)
+    f.close()
+
+
+class Int(OArg):
+    def __init__(self, name):
+        OArg.__init__(self, name, "int")
+
+class Byte(OArg):
+    def __init__(self, name):
+        OArg.__init__(self, name, "byte")
+
+
+def gen_class(cname, attribs, methods):
+    c = OClass(cname)
+    s = OStruct(cname)
+    cargs = []
+    ccode = []
+    tname = cname+"_t"
+    for name, tpe in attribs:
+        if name[0]=="-":
+            name = name[1:]
+        else:
+            cargs.append(OArg(name, tpe))
+            ccode.append("self->"+name+" = "+name+";")
+        s << OArg(name,tpe)
+                        
+    for mname, args, tpe in methods:
+        if mname == "init":
+            args = cargs
+        args = [OArg("*self", tname)] + args
+        m = OMethod(mname, tpe, args)
+        if mname == "init":
+            for cl in ccode:
+                m << cl
+        if mname.startswith("_"):
+            m = OMethod(mname[1:], "void", args, mods={PRIVATE})
+        c << m
+    writeFile2(s, c)
+
+
+# Read STM32 pin configuration from text file and generate macros to access output pins.
+#
+p = ParseOrg("stm32.org")
+c = OClass("config")
+m = OMethod("port_init", "void")
+c << m
+m << "GPIO_InitTypeDef ioInit;"
+
+for i in ['A','B','C']:
+    pout = []
+    pin  = []
+    for bit,af,desc,direction in p.parse()[1:]:
+        if direction in ["OUT", "IN/OUT"]:
+            c << OMacro("set_"+desc,    "GPIO"+i+"->BSRR = GPIO_Pin_"+bit)
+            c << OMacro("clr_"+desc,    "GPIO"+i+"->BRR  = GPIO_Pin_"+bit)
+            #c << OMacro("toggle_"+name, "P"+str(i)+"OUT ^= BIT"+ str(bit))
+
+            pout.append("GPIO_Pin_"+bit)
+
+        if direction in ["IN", "IN/OUT"]:
+            #c << OMacro("get_"+name,   "("+pname+"IN & BIT"+str(bit)+" == BIT"+str(bit)+")")
+            #c << OMacro("in_"+name,    pname+"DIR &= ~BIT"+ str(bit))
+            #c << OMacro("out_"+name,   pname+"DIR |= BIT"+ str(bit))
+            pin.append("GPIO_Pin_"+bit)
+
+    if len(pout) > 0 or len(pin) > 0:
+        m << ""
+        m << "RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIO"+i+", ENABLE);"
+            
+    if len(pout) > 0:
+        m << ""
+        m << "ioInit.GPIO_PIN = " + (" | ".join(pout)) + ";"
+        m << "ioInit.GPIO_Mode = GPIO_Mode_OUT;"
+        m << "ioInit.GPIO_OType = GPIO_OType_PP;"
+        m << "ioInit.GPIO_PuPd = GPIO_PuPd_NOPULL";
+        m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
+        m << "GPIO_Init(GPIO"+i+", &ioInit);"
+    if len(pin) > 0:
+        m << ""
+        m << "ioInit.GPIO_PIN = " + (" | ".join(pin)) + ";"
+        m << "ioInit.GPIO_Mode = GPIO_Mode_IN;"
+        m << "ioInit.GPIO_OType = GPIO_OType_PP;"
+        m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN";
+        m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
+        m << "GPIO_Init(GPIO"+i+", &ioInit);"
+writeFile(c)
+

@@ -3,7 +3,7 @@
 
 | PORT1 | Direction | Desc       |
 |-------+-----------+------------|
-|     0 | OUT       | LED_GREEN  |
+|     0 | OUT       | LED_RED    |
 |     1 |           |            |
 |     2 |           |            |
 |     3 | IN/OUT    | OW1        |
@@ -12,7 +12,7 @@
 |     6 | OUT       | LCD_RS     |
 |     7 | OUT       | LCD_ENABLE |
 
-PORT1.6 = LED_RED
+PORT1.6 = LED_GREEN
 
 
 
