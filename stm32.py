@@ -5,7 +5,8 @@ from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
 from parseOrg import ParseOrg
 
 def writeFile(c):
-    f = OCFile(c.name, "../stm32/")
+    f = OCFile(c.name, "../stm32/",
+               includes = ["stm32f0xx.h"])
     c.genC(f)
     f.close()
 
@@ -80,22 +81,22 @@ for i in ['A','B','C']:
 
     if len(pout) > 0 or len(pin) > 0:
         m << ""
-        m << "RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIO"+i+", ENABLE);"
+        m << "RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIO"+i+", ENABLE);"
             
     if len(pout) > 0:
         m << ""
-        m << "ioInit.GPIO_PIN = " + (" | ".join(pout)) + ";"
+        m << "ioInit.GPIO_Pin = " + (" | ".join(pout)) + ";"
         m << "ioInit.GPIO_Mode = GPIO_Mode_OUT;"
         m << "ioInit.GPIO_OType = GPIO_OType_PP;"
-        m << "ioInit.GPIO_PuPd = GPIO_PuPd_NOPULL";
+        m << "ioInit.GPIO_PuPd = GPIO_PuPd_NOPULL;"
         m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
         m << "GPIO_Init(GPIO"+i+", &ioInit);"
     if len(pin) > 0:
         m << ""
-        m << "ioInit.GPIO_PIN = " + (" | ".join(pin)) + ";"
+        m << "ioInit.GPIO_Pin = " + (" | ".join(pin)) + ";"
         m << "ioInit.GPIO_Mode = GPIO_Mode_IN;"
         m << "ioInit.GPIO_OType = GPIO_OType_PP;"
-        m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN";
+        m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN;"
         m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
         m << "GPIO_Init(GPIO"+i+", &ioInit);"
 writeFile(c)

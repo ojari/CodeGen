@@ -37,8 +37,13 @@ class OFile(object):
     
 class OCFile(object):
     def __init__(self, fbase, fpath="", includes=[]):
-        self.c = OFile(fpath+fbase+".c")
-        self.h = OFile(fpath+fbase+".h")
+        cExtra = ""
+        hExtra = ""
+        if "stm32" in fpath:
+            cExtra="src/"
+            hExtra="inc/"
+        self.c = OFile(fpath+cExtra+fbase+".c")
+        self.h = OFile(fpath+hExtra+fbase+".h")
 
         self.h << "#ifndef _"+fbase.upper()+"_H"
         self.h << "#define _"+fbase.upper()+"_H"
@@ -100,6 +105,8 @@ class OMethod(OBase):
         self.parent = None
 
     def arg(self):
+        if len(self.args) == 0:
+            return "(void)"
         alist = [ a.argDef() for a in self.args]
         return "("+ (", ".join(alist)) + ")"
 
