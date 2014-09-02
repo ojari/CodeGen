@@ -65,7 +65,13 @@ m << "GPIO_InitTypeDef ioInit;"
 for i in ['A','B','C']:
     pout = []
     pin  = []
+    paf  = []
     for bit,af,desc,direction in p.parse()[1:]:
+        af = af.strip()
+        print "AF:",af,len(af)
+        if len(af) > 0:
+            paf.append("GPIO_Pin_"+bit)
+            continue
         if direction in ["OUT", "IN/OUT"]:
             c << OMacro("set_"+desc,    "GPIO"+i+"->BSRR = GPIO_Pin_"+bit)
             c << OMacro("clr_"+desc,    "GPIO"+i+"->BRR  = GPIO_Pin_"+bit)
@@ -99,5 +105,18 @@ for i in ['A','B','C']:
         m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN;"
         m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
         m << "GPIO_Init(GPIO"+i+", &ioInit);"
+    if len(paf) > 0:
+        m << ""
+        m << "ioInit.GPIO_Pin = " + (" | ".join(paf)) + ";"
+        m << "ioInit.GPIO_Mode = GPIO_Mode_AF;"
+        #m << "ioInit.GPIO_OType = GPIO_OType_PP;"
+        #m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN;"
+        m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
+        m << "GPIO_Init(GPIO"+i+", &ioInit);"
+        m << ""
+        for item in paf:
+            psource = "GPIO_PinSource"+item[len("GPIO_Pin_"):]
+            m << "GPIO_PinAFConfig(GPIO"+i+", "+psource+", 0);"
+
 writeFile(c)
 
