@@ -1,7 +1,7 @@
 #
 # Copyright 2014 Jari Ojanen
 #
-from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
+from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, OSwitch
 from parseOrg import ParseOrg
 
 def writeFile(c):
@@ -60,8 +60,20 @@ p = ParseOrg("stm32.org")
 c = OClass("config")
 m = OMethod("port_init", "void")
 c << m
+
+ms = OMethod("port_set", "void", [OArg("pin", "uint8_t")] )
+ss = OSwitch("pin")
+ms << ss
+c << ms
+
+mc = OMethod("port_clear", "void", [OArg("pin", "uint8_t")] )
+sc = OSwitch("pin")
+mc << sc
+c << mc
+
 m << "GPIO_InitTypeDef ioInit;"
 
+pins = []
 for i in ['A','B','C']:
     pout = []
     pin  = []
@@ -78,12 +90,14 @@ for i in ['A','B','C']:
             #c << OMacro("toggle_"+name, "P"+str(i)+"OUT ^= BIT"+ str(bit))
 
             pout.append("GPIO_Pin_"+bit)
-
+            pins.append([direction,desc,i,bit])
         if direction in ["IN", "IN/OUT"]:
             #c << OMacro("get_"+name,   "("+pname+"IN & BIT"+str(bit)+" == BIT"+str(bit)+")")
             #c << OMacro("in_"+name,    pname+"DIR &= ~BIT"+ str(bit))
             #c << OMacro("out_"+name,   pname+"DIR |= BIT"+ str(bit))
             pin.append("GPIO_Pin_"+bit)
+            if direction != "IN/OUT":
+                pins.append([direction,desc,i,bit])
 
     if len(pout) > 0 or len(pin) > 0:
         m << ""
@@ -116,7 +130,17 @@ for i in ['A','B','C']:
         m << ""
         for item in paf:
             psource = "GPIO_PinSource"+item[len("GPIO_Pin_"):]
-            m << "GPIO_PinAFConfig(GPIO"+i+", "+psource+", 0);"
+            m << "GPIO_PinAFConfig(GPIO"+i+", "+psource+", 1);"
+
+pinId = 1
+for direction,desc,port,bit in pins:
+    name = "PIN_"+desc
+    c << OMacro(name, str(pinId))
+    ss.add(name, ["GPIO"+port+"->BSRR = GPIO_Pin_"+bit+";"])
+
+    sc.add(name, ["GPIO"+port+"->BRR = GPIO_Pin_"+bit+";"])
+    pinId += 1
+
 
 writeFile(c)
 

@@ -126,7 +126,10 @@ class OMethod(OBase):
         f.c << self.ctype + " " + funcname + " " + self.arg()
         f.c << "{"
         for code in self.code:
-            f.c << code
+            if isinstance(code, OBase):
+                code.genC(f)
+            else:
+                f.c << code
         f.c << "}"
         
         if PUBLIC in self.mods:
@@ -180,6 +183,27 @@ class OStruct(OBase):
             m.genC(f)
         f.h << "}"
         f.h << self.name + "_t;"
+
+
+class OSwitch(OBase):
+    def __init__(self, name, mods={PUBLIC}):
+        OBase.__init__(self, name, "", mods)
+        self.members = []
+
+    def add(self, cond, code):
+        self.members.append([cond,code])
+        return self
+
+    def genC(self, f):
+        print(f)
+        f.c << "switch (" + self.name + ")"
+        f.c << "{"
+        for cond,code in self.members:
+            f.c << "case " + cond + ":"
+            for line in code:
+                f.c << line
+            f.c << "break;"
+        f.c << "}"
 
         
 class OTestClass(OClass):

@@ -5,19 +5,19 @@
 |  0 |    | BUTTON      | IN        |
 |  1 |    |             |           |
 |  2 |    |             |           |
-|  3 |    |             |           |
-|  4 |    |             |           |
-|  5 |    |             |           |
+|  3 |    | TEMP1       | IN/OUT    |
+|  4 |    | TEMP2       | IN/OUT    |
+|  5 |    | TEMP3       | IN/OUT    |
 |  6 |    |             |           |
 |  7 |    |             |           |
 |  8 |    |             |           |
-|  9 |    | USART1_TX   |           |
-| 10 |    | USART1_RX   |           |
+|  9 |  1 | USART1_TX   |           |
+| 10 |  1 | USART1_RX   |           |
 | 11 |    |             |           |
 | 12 |    |             |           |
 | 13 |    | IROUT       |           |
-| 14 |  1 | USART2_TX   |           |
-| 15 |  1 | USART2_RX   |           |
+| 14 |    | USART2_TX   |           |
+| 15 |    | USART2_RX   |           |
 
 
 |  B | AF | Description | Direction |
