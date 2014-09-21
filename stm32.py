@@ -71,6 +71,18 @@ sc = OSwitch("pin")
 mc << sc
 c << mc
 
+mm = OMethod("port_mode", "void", [OArg("pin", "uint8_t"), OArg("out", "uint8_t")] )
+sm = OSwitch("pin")
+mm << sm
+c << mm
+
+mr = OMethod("port_read", "uint8_t", [OArg("pin", "uint8_t")] )
+sr = OSwitch("pin")
+mr << "uint8_t ret=0;"
+mr << sr
+c << mr
+
+
 m << "GPIO_InitTypeDef ioInit;"
 
 pins = []
@@ -139,8 +151,17 @@ for direction,desc,port,bit in pins:
     ss.add(name, ["GPIO"+port+"->BSRR = GPIO_Pin_"+bit+";"])
 
     sc.add(name, ["GPIO"+port+"->BRR = GPIO_Pin_"+bit+";"])
+
+    if direction == "IN/OUT":
+        sm.add(name, ["GPIO"+port+"->MODER &= ~((uint32_t)0x3 << ("+bit+"*2));",
+                      "if (out)",
+                      "{",
+                      "GPIO"+port+"->MODER |= ((uint32_t)0x1 << ("+bit+"*2));",
+                      "}"])
+
     pinId += 1
 
 
+mr << "return ret;"
 writeFile(c)
 
