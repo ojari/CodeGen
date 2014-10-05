@@ -24,8 +24,10 @@ class OFile(object):
             self.indent -= 1
         #print ("\t"*self.indent) + self.line
         self.f.write(("\t"*self.indent) + s + "\n")
-        if s == "{":
+        if s == "{" or s.startswith("case "):
             self.indent += 1
+        if s == "break;":
+            self.indent -= 1
 
     def addCsIncludes(self, includes):
         for inc in includes:
@@ -119,6 +121,15 @@ class OMethod(OBase):
             f << code
         f << "}"
 
+    def genCPP(self, fh, fc):
+        fh << self.csMods() + self.ctype + " " + self.name + self.arg() + ";"
+
+        fc << self.ctype + " " + self.parent.name + "::" + self.name + self.arg()
+        fc << "{"
+        for code in self.code:
+            fc << code
+        fc << "}"
+
     def genC(self, f):
         funcname = self.parent.name + "_" + self.name
 
@@ -157,6 +168,14 @@ class OClass(OBase):
         for m in self.members:
             m.genCS(f)
         f << "}"
+
+    def genCPP(self, fh, fc):
+        fh << self.csMods() + "class " + self.name
+        fh << "{"
+        for m in self.members:
+            m.genCPP(fh, fc)
+        fh << "};"
+
 
     def genC(self, f):
         for m in self.members:

@@ -4,14 +4,17 @@
 from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, OSwitch
 from parseOrg import ParseOrg
 
+PATH="../stm32/"
+#PATH="../"
+
 def writeFile(c):
-    f = OCFile(c.name, "../stm32/",
+    f = OCFile(c.name, PATH,
                includes = ["stm32f0xx.h"])
     c.genC(f)
     f.close()
 
 def writeFile2(c1,c2):
-    f = OCFile(c1.name, "../stm32/")
+    f = OCFile(c1.name, PATH)
     c1.genC(f)
     c2.genC(f)
     f.close()
@@ -92,24 +95,23 @@ for i in ['A','B','C']:
     paf  = []
     for bit,af,desc,direction in p.parse()[1:]:
         af = af.strip()
-        print "AF:",af,len(af)
+        #print "AF:",af,len(af)
         if len(af) > 0:
-            paf.append("GPIO_Pin_"+bit)
+            paf.append(["GPIO_Pin_"+bit, af])
             continue
         if direction in ["OUT", "IN/OUT"]:
             c << OMacro("set_"+desc,    "GPIO"+i+"->BSRR = GPIO_Pin_"+bit)
             c << OMacro("clr_"+desc,    "GPIO"+i+"->BRR  = GPIO_Pin_"+bit)
-            #c << OMacro("toggle_"+name, "P"+str(i)+"OUT ^= BIT"+ str(bit))
+            c << OMacro("toggle_"+desc, "GPIO"+i+"->ODR ^= GPIO_Pin_"+bit)
 
             pout.append("GPIO_Pin_"+bit)
             pins.append([direction,desc,i,bit])
-        if direction in ["IN", "IN/OUT"]:
+        if direction in ["IN"]:
             #c << OMacro("get_"+name,   "("+pname+"IN & BIT"+str(bit)+" == BIT"+str(bit)+")")
             #c << OMacro("in_"+name,    pname+"DIR &= ~BIT"+ str(bit))
             #c << OMacro("out_"+name,   pname+"DIR |= BIT"+ str(bit))
             pin.append("GPIO_Pin_"+bit)
-            if direction != "IN/OUT":
-                pins.append([direction,desc,i,bit])
+            pins.append([direction,desc,i,bit])
 
     if len(pout) > 0 or len(pin) > 0:
         m << ""
@@ -132,17 +134,18 @@ for i in ['A','B','C']:
         m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
         m << "GPIO_Init(GPIO"+i+", &ioInit);"
     if len(paf) > 0:
+        afpins = [pin for pin,af in paf]
         m << ""
-        m << "ioInit.GPIO_Pin = " + (" | ".join(paf)) + ";"
+        m << "ioInit.GPIO_Pin = " + (" | ".join(afpins)) + ";"
         m << "ioInit.GPIO_Mode = GPIO_Mode_AF;"
         #m << "ioInit.GPIO_OType = GPIO_OType_PP;"
         #m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN;"
         m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
         m << "GPIO_Init(GPIO"+i+", &ioInit);"
         m << ""
-        for item in paf:
+        for item,af in paf:
             psource = "GPIO_PinSource"+item[len("GPIO_Pin_"):]
-            m << "GPIO_PinAFConfig(GPIO"+i+", "+psource+", 1);"
+            m << "GPIO_PinAFConfig(GPIO"+i+", "+psource+", "+af+");"
 
 pinId = 1
 for direction,desc,port,bit in pins:
@@ -153,11 +156,14 @@ for direction,desc,port,bit in pins:
     sc.add(name, ["GPIO"+port+"->BRR = GPIO_Pin_"+bit+";"])
 
     if direction == "IN/OUT":
-        sm.add(name, ["GPIO"+port+"->MODER &= ~((uint32_t)0x3 << ("+bit+"*2));",
+        sm.add(name, ["GPIO"+port+"->MODER &= ~(((uint32_t)0x3) << ("+bit+"*2));",
                       "if (out)",
                       "{",
-                      "GPIO"+port+"->MODER |= ((uint32_t)0x1 << ("+bit+"*2));",
+                      "GPIO"+port+"->MODER |= (((uint32_t)0x1) << ("+bit+"*2));",
                       "}"])
+
+    if direction in ["IN", "IN/OUT"]:
+        sr.add(name, ["ret = ((GPIO"+port+"->IDR & GPIO_Pin_"+bit+") == GPIO_Pin_"+bit+");"])
 
     pinId += 1
 

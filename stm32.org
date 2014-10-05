@@ -3,32 +3,32 @@
 |  A | AF | Description | Direction |
 |----+----+-------------+-----------|
 |  0 |    | BUTTON      | IN        |
-|  1 |    |             |           |
-|  2 |    |             |           |
-|  3 |    | TEMP1       | IN/OUT    |
-|  4 |    | TEMP2       | IN/OUT    |
-|  5 |    | TEMP3       | IN/OUT    |
-|  6 |    |             |           |
-|  7 |    |             |           |
-|  8 |    |             |           |
+|  1 |    | BTN1        | IN        |
+|  2 |    | BTN2        | IN        |
+|  3 |    | BTN3        | IN        |
+|  4 |    |             |           |
+|  5 |  0 | SPI1 SCK    |           |
+|  6 |  0 | SPI1 MISO   |           |
+|  7 |  0 | SPI1 MOSI   |           |
+|  8 |    | IRIN        | IN        |
 |  9 |  1 | USART1_TX   |           |
 | 10 |  1 | USART1_RX   |           |
-| 11 |    |             |           |
-| 12 |    |             |           |
-| 13 |    | IROUT       |           |
+| 11 |    | NEXA_OUT    | OUT       |
+| 12 |    | NEXA_IN     | IN        |
+| 13 |    | IROUT       | OUT       |
 | 14 |    | USART2_TX   |           |
 | 15 |    | USART2_RX   |           |
 
 
 |  B | AF | Description | Direction |
 |----+----+-------------+-----------|
-|  0 |    |             |           |
-|  1 |    |             |           |
-|  2 |    |             |           |
-|  3 |  1 | SPI1 SCK    |           |
-|  4 |  1 | SPI1 MISO   |           |
-|  5 |  1 | SPI1 MOSI   |           |
-|  6 |    |             |           |
+|  0 |    | CS_RFM12B   | OUT       |
+|  1 |    | CS_W5200    | OUT       |
+|  2 |    | CS_SDCARD   | OUT       |
+|  3 |    | TEMP2       | IN/OUT    |
+|  4 |    | TEMP3       | IN/OUT    |
+|  5 |    | TEMP4       | IN/OUT    |
+|  6 |    | RFM12B_IRQ  | IN        |
 |  7 |    |             |           |
 |  8 |    |             |           |
 |  9 |    |             |           |
@@ -55,7 +55,30 @@
 | 10 |    | LCD_RS      | OUT       |
 | 11 |    | LCD_ENABLE  | OUT       |
 | 12 |    |             |           |
-| 13 |    |             |           |
-| 14 |    |             |           |
-| 15 |    |             |           |
+| 13 |    | TEMP1       | IN/OUT    |
+| 14 |    | [xtal lse]  |           |
+| 15 |    | [xtal lse]  |           |
 
+
+* Buspirate
+
+Logic analyzer
+
+ch0 - CS
+ch1 - MISO
+ch2 - CLK
+ch3 - MOSI
+ch4 - AUX
+
+Cable
+
+1 - black    - GND
+2 - white    - 3.3V
+3 -          - 5V
+4 - pink     - ADC
+5 -          - Vpu
+6 - green    - AUX
+7 - yellow   - CLK
+8 - orange   - MOSI
+9 - red      - CS
+A - brown    - MISO
