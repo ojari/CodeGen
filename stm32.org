@@ -82,3 +82,6 @@ Cable
 8 - orange   - MOSI
 9 - red      - CS
 A - brown    - MISO
+
+* SDCARD pins
+

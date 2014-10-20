@@ -3,6 +3,7 @@
 #
 from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
 from parseOrg import ParseOrg
+from config import Config
 
 def writeFile(c):
     f = OCFile(c.name, "../msp430/", includes=["<msp430.h>"])
@@ -56,19 +57,18 @@ def gen_class(cname, attribs, methods):
 # Read MSP430 pin configuration from text file and generate macros to access output pins.
 #
 p = ParseOrg("launchpad.org")
-c = OClass("port")
+c = Config()
 sc = OClass("port_sim")
-m = OMethod("init", "void")
-c << m
+
 for i in [1,2]:
     pdir = []
     pname = "P"+str(i)
     for bit,direction,name in p.parse()[1:]:
         bname = "BIT"+str(bit)
         if direction in ["OUT", "IN/OUT"]:
-            c << OMacro("set_"+name, pname+"OUT |= "+bname)
-            c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
-            c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
+            c.c << OMacro("set_"+name, pname+"OUT |= "+bname)
+            c.c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
+            c.c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
             pdir.append(bname)
 
             sc << OMacro("set_"+name,   "bit_set(\""+name+"\")")
@@ -76,13 +76,13 @@ for i in [1,2]:
             sc << OMacro("toggle_"+name,"bit_toggle(\""+name+"\")")
 
         if direction in ["IN/OUT"]:
-            c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
-            c << OMacro("out_"+name, pname+"DIR |= "+bname)
-            c << OMacro("in_"+name,  pname+"DIR &= ~"+bname)
+            c.c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
+            c.c << OMacro("out_"+name, pname+"DIR |= "+bname)
+            c.c << OMacro("in_"+name,  pname+"DIR &= ~"+bname)
             
     if len(pdir) > 0:
-        m << pname+"DIR = " + (" + ".join(pdir)) + ";"
-writeFile(c)
+        c.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
+writeFile(c.c)
 writeFile(sc)
 
 gen_class("fifo", 
