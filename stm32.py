@@ -125,12 +125,12 @@ for i in ['A','B','C']:
             c.m << "GPIO_PinAFConfig(GPIO"+i+", "+psource+", "+af+");"
 
 pinId = 1
-for direction,desc,port,bit in pins:
+for direction, desc, port, bit in pins:
     name = "PIN_"+desc
-    c.c << OMacro(name, str(pinId))
-    c.ss.add(name, ["GPIO"+port+"->BSRR = GPIO_Pin_"+bit+";"])
 
-    c.sc.add(name, ["GPIO"+port+"->BRR = GPIO_Pin_"+bit+";"])
+    c.add(name,
+          "GPIO"+port+"->BSRR = GPIO_Pin_"+bit,
+          "GPIO"+port+"->BRR = GPIO_Pin_"+bit)
 
     if direction == "IN/OUT":
         c.sm.add(name, ["GPIO"+port+"->MODER &= ~(((uint32_t)0x3) << ("+bit+"*2));",

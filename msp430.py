@@ -5,13 +5,18 @@ from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
 from parseOrg import ParseOrg
 from config import Config
 
+#PATH="../msp430/"
+PATH = "../ha/"
+
+
 def writeFile(c):
-    f = OCFile(c.name, "../msp430/", includes=["hw.h"])
+    f = OCFile(c.name, PATH, includes=["hw.h"])
     c.genC(f)
     f.close()
 
-def writeFile2(c1,c2):
-    f = OCFile(c1.name, "../msp430/", includes=["hw.h"])
+
+def writeFile2(c1, c2):
+    f = OCFile(c1.name, PATH, includes=["hw.h"])
     c1.genC(f)
     c2.genC(f)
     f.close()
@@ -20,6 +25,7 @@ def writeFile2(c1,c2):
 class Int(OArg):
     def __init__(self, name):
         OArg.__init__(self, name, "int")
+
 
 class Byte(OArg):
     def __init__(self, name):
@@ -63,13 +69,17 @@ sc = OClass("port_sim")
 for i in [1,2]:
     pdir = []
     pname = "P"+str(i)
-    for bit,direction,name in p.parse()[1:]:
+    for bit, direction, name in p.parse()[1:]:
         bname = "BIT"+str(bit)
         if direction in ["OUT", "IN/OUT"]:
             c.c << OMacro("set_"+name, pname+"OUT |= "+bname)
             c.c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
             c.c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
             pdir.append(bname)
+
+            c.add(name,
+                  pname+"OUT |= "+bname,
+                  pname+"OUT &= ~"+bname)
 
             sc << OMacro("set_"+name,   "bit_set(\""+name+"\")")
             sc << OMacro("clr_"+name,   "bit_clr(\""+name+"\")")
@@ -88,14 +98,14 @@ writeFile(c.c)
 writeFile(sc)
 
 gen_class("fifo", 
-          [[ "bufPtr", "void*"],
-           [ "bufSize", "size_t"],
-           [ "recSize", "size_t"],
-           [ "-pushPtr", "void*"],
-           [ "-popPtr",  "void*"]],
-          [[ "init", [], "void"],
-           [ "push", [OArg("data", "void*")], "void"],
-           [ "pop",  [], "void*"]
+          [["bufPtr", "void*"],
+           ["bufSize", "size_t"],
+           ["recSize", "size_t"],
+           ["-pushPtr", "void*"],
+           ["-popPtr",  "void*"]],
+          [["init", [], "void"],
+           ["push", [OArg("data", "void*")], "void"],
+           ["pop",  [], "void*"]
        ])
 
 
@@ -103,16 +113,16 @@ exit(0)
 
 # Generate some template classes
 #
-gen_class("ow", [[ "init", []],
-                 [ "reset", []],
-                 [ "read", []],
-                 [ "_readByte", [Byte('val')]],
-                 [ "_writeByte", [Byte('val')]],
+gen_class("ow", [["init", []],
+                 ["reset", []],
+                 ["read", []],
+                 ["_readByte", [Byte('val')]],
+                 ["_writeByte", [Byte('val')]],
              ])
 
-gen_class("hd44", [[ "init", []],
-                   [ "clear", []],
-                   [ "goto", [Int("x"), Int("y")]],
-                   [ "print", [Int("ch")]],
-                   [ "_command", [Int("cmd")]],
+gen_class("hd44", [["init", []],
+                   ["clear", []],
+                   ["goto", [Int("x"), Int("y")]],
+                   ["print", [Int("ch")]],
+                   ["_command", [Int("cmd")]],
                ])

@@ -1,7 +1,10 @@
-from codegen import OClass,OMethod,OSwitch,OArg
+from codegen import OClass, OMethod, OSwitch, OArg, OMacro
+
 
 class Config:
     def __init__(self):
+        self.pin_id = 1
+
         self.c = OClass("config")
         self.m = OMethod("port_init", "void")
         self.c << self.m
@@ -26,3 +29,9 @@ class Config:
         self.mr << "uint8_t ret=0;"
         self.mr << self.sr
         self.c << self.mr
+
+    def add(self, name, oper_set, oper_clear):
+        self.ss.add("PIN_"+name, [oper_set + ";"])
+        self.sc.add("PIN_"+name, [oper_clear + ";"])
+        self.c << OMacro("PIN_"+name, str(self.pin_id))
+        self.pin_id += 1
