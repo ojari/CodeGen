@@ -6,12 +6,12 @@ from parseOrg import ParseOrg
 from config import Config
 
 def writeFile(c):
-    f = OCFile(c.name, "../msp430/", includes=["<msp430.h>"])
+    f = OCFile(c.name, "../msp430/", includes=["hw.h"])
     c.genC(f)
     f.close()
 
 def writeFile2(c1,c2):
-    f = OCFile(c1.name, "../msp430/", includes=["<msp430.h>"])
+    f = OCFile(c1.name, "../msp430/", includes=["hw.h"])
     c1.genC(f)
     c2.genC(f)
     f.close()
@@ -82,6 +82,8 @@ for i in [1,2]:
             
     if len(pdir) > 0:
         c.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
+
+c.mr << "return ret;"
 writeFile(c.c)
 writeFile(sc)
 

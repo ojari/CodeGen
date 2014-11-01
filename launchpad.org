@@ -8,8 +8,8 @@
 |     2 |           |            |
 |     3 | IN/OUT    | OW1        |
 |     4 |           |            |
-|     5 | OUT       |            |
-|     6 | OUT       | LCD_RS     |
+|     5 | OUT       | LCD_RS     |
+|     6 | OUT       | LED_GREEN  |
 |     7 | OUT       | LCD_ENABLE |
 
 PORT1.6 = LED_GREEN
@@ -18,7 +18,7 @@ PORT1.6 = LED_GREEN
 
 | PORT2 | Direction | Desc      |
 |-------+-----------+-----------|
-|     0 |           |           |
+|     0 | OUT       | NEXA_OUT  |
 |     1 |           |           |
 |     2 | OUT       | LCD_DATA1 |
 |     3 | OUT       | LCD_DATA2 |
