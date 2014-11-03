@@ -63,38 +63,48 @@ def gen_class(cname, attribs, methods):
 # Read MSP430 pin configuration from text file and generate macros to access output pins.
 #
 p = ParseOrg("launchpad.org")
-c = Config()
+cfg = Config()
 sc = OClass("port_sim")
 
-for i in [1,2]:
+for i in [1, 2]:
     pdir = []
     pname = "P"+str(i)
     for bit, direction, name in p.parse()[1:]:
         bname = "BIT"+str(bit)
         if direction in ["OUT", "IN/OUT"]:
-            c.c << OMacro("set_"+name, pname+"OUT |= "+bname)
-            c.c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
-            c.c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
+            cfg.c << OMacro("set_"+name, pname+"OUT |= "+bname)
+            cfg.c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
+            cfg.c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
             pdir.append(bname)
 
-            c.add(name,
+            cfg.add(name,
                   pname+"OUT |= "+bname,
                   pname+"OUT &= ~"+bname)
 
-            sc << OMacro("set_"+name,   "bit_set(\""+name+"\")")
-            sc << OMacro("clr_"+name,   "bit_clr(\""+name+"\")")
-            sc << OMacro("toggle_"+name,"bit_toggle(\""+name+"\")")
+            sc << OMacro("set_"+name,    "bit_set(\""+name+"\")")
+            sc << OMacro("clr_"+name,    "bit_clr(\""+name+"\")")
+            sc << OMacro("toggle_"+name, "bit_toggle(\""+name+"\")")
 
+        if direction in ["IN", "IN/OUT"]:
+            cfg.add_in(name, "((" + pname + "IN & " + bname + ") == " + bname + ")")
+
+            cfg.sm.add(name, [pname + "DIR &= ~" + bname + ";",
+                              "if (out)",
+                              "{",
+                              pname + "DIR |= " + bname + ";",
+                              "}"])
         if direction in ["IN/OUT"]:
-            c.c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
-            c.c << OMacro("out_"+name, pname+"DIR |= "+bname)
-            c.c << OMacro("in_"+name,  pname+"DIR &= ~"+bname)
+            cfg.c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
+            cfg.c << OMacro("out_"+name, pname+"DIR |= "+bname)
+            cfg.c << OMacro("in_"+name,  pname+"DIR &= ~"+bname)
             
     if len(pdir) > 0:
-        c.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
+        cfg.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 
-c.mr << "return ret;"
-writeFile(c.c)
+cfg.mr << "return ret;"
+writeFile(cfg.c)
+exit(0)
+
 writeFile(sc)
 
 gen_class("fifo", 
@@ -106,10 +116,8 @@ gen_class("fifo",
           [["init", [], "void"],
            ["push", [OArg("data", "void*")], "void"],
            ["pop",  [], "void*"]
-       ])
+           ])
 
-
-exit(0)
 
 # Generate some template classes
 #
@@ -118,11 +126,11 @@ gen_class("ow", [["init", []],
                  ["read", []],
                  ["_readByte", [Byte('val')]],
                  ["_writeByte", [Byte('val')]],
-             ])
+                 ])
 
 gen_class("hd44", [["init", []],
                    ["clear", []],
                    ["goto", [Int("x"), Int("y")]],
                    ["print", [Int("ch")]],
                    ["_command", [Int("cmd")]],
-               ])
+                   ])

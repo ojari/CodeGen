@@ -7,7 +7,7 @@
 |     1 |           |            |
 |     2 |           |            |
 |     3 | IN/OUT    | OW1        |
-|     4 |           |            |
+|     4 | IN/OUT    | OW2        |
 |     5 | OUT       | LCD_RS     |
 |     6 | OUT       | LED_GREEN  |
 |     7 | OUT       | LCD_ENABLE |

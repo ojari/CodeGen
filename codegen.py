@@ -10,8 +10,10 @@ TEST      = "test"
 GETTER    = "getter"
 SETTER    = "setter"
 
+
 def q(s):
     return "\""+s+"\""
+
 
 class OFile(object):
     def __init__(self, fname):
@@ -36,14 +38,15 @@ class OFile(object):
 
     def close(self):
         self.f.close()
-    
+
+
 class OCFile(object):
     def __init__(self, fbase, fpath="", includes=[]):
         cExtra = ""
         hExtra = ""
         if "stm32" in fpath:
-            cExtra="src/"
-            hExtra="inc/"
+            cExtra = "src/"
+            hExtra = "inc/"
         self.c = OFile(fpath+cExtra+fbase+".c")
         self.h = OFile(fpath+hExtra+fbase+".h")
 
@@ -63,6 +66,7 @@ class OCFile(object):
         self.h.close()
         self.c.close()
 
+
 class OBase(object):
     def __init__(self, name, ctype, mods):
         self.name = name
@@ -70,9 +74,9 @@ class OBase(object):
         self.mods = mods
 
     def csMods(self):
-        visible = {PRIVATE,PROTECTED,PUBLIC,STATIC}
+        visible = {PRIVATE, PROTECTED, PUBLIC, STATIC}
         
-        return " ".join( visible.intersection(self.mods) ) + " "
+        return " ".join(visible.intersection(self.mods)) + " "
 
 
 class OArg(OBase):
@@ -88,6 +92,7 @@ class OArg(OBase):
     def argDef(self):
         return self.ctype + " " + self.name
 
+
 class OMacro(OBase):
     def __init__(self, name, value):
         OBase.__init__(self, name, "", {PUBLIC})
@@ -98,6 +103,7 @@ class OMacro(OBase):
             f.h << "#define " + self.name + " " + self.value
         else:
             f.c << "#define " + self.name + " " + self.value
+
 
 class OMethod(OBase):
     def __init__(self, name, ctype, args=[], mods={PUBLIC}):
@@ -150,6 +156,7 @@ class OMethod(OBase):
         self.code.append(s)
         return self
 
+
 class OClass(OBase):
     def __init__(self, name, mods={PUBLIC}):
         OBase.__init__(self, name, name, mods)
@@ -184,6 +191,7 @@ class OClass(OBase):
     def genPY(self, f):
         pass
 
+
 class OStruct(OBase):
     def __init__(self, name, mods={PUBLIC}):
         OBase.__init__(self, name, name, mods)
@@ -217,7 +225,7 @@ class OSwitch(OBase):
         print(f)
         f.c << "switch (" + self.name + ")"
         f.c << "{"
-        for cond,code in self.members:
+        for cond, code in self.members:
             f.c << "case " + cond + ":"
             for line in code:
                 f.c << line

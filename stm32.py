@@ -5,14 +5,16 @@ from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, OSw
 from parseOrg import ParseOrg
 from config import Config
 
-PATH="../stm32/"
+PATH = "../stm32/"
 #PATH="../"
+
 
 def writeFile(c):
     f = OCFile(c.name, PATH,
-               includes = ["stm32f0xx.h"])
+               includes=["stm32f0xx.h"])
     c.genC(f)
     f.close()
+
 
 def writeFile2(c1,c2):
     f = OCFile(c1.name, PATH)
@@ -24,6 +26,7 @@ def writeFile2(c1,c2):
 class Int(OArg):
     def __init__(self, name):
         OArg.__init__(self, name, "int")
+
 
 class Byte(OArg):
     def __init__(self, name):
@@ -37,12 +40,12 @@ def gen_class(cname, attribs, methods):
     ccode = []
     tname = cname+"_t"
     for name, tpe in attribs:
-        if name[0]=="-":
+        if name[0] == "-":
             name = name[1:]
         else:
             cargs.append(OArg(name, tpe))
             ccode.append("self->"+name+" = "+name+";")
-        s << OArg(name,tpe)
+        s << OArg(name, tpe)
                         
     for mname, args, tpe in methods:
         if mname == "init":
@@ -66,11 +69,11 @@ c = Config()
 c.m << "GPIO_InitTypeDef ioInit;"
 
 pins = []
-for i in ['A','B','C']:
+for i in ['A', 'B', 'C']:
     pout = []
-    pin  = []
-    paf  = []
-    for bit,af,desc,direction in p.parse()[1:]:
+    pin = []
+    paf = []
+    for bit, af, desc, direction in p.parse()[1:]:
         af = af.strip()
         #print "AF:",af,len(af)
         if len(af) > 0:
@@ -88,7 +91,7 @@ for i in ['A','B','C']:
             #c << OMacro("in_"+name,    pname+"DIR &= ~BIT"+ str(bit))
             #c << OMacro("out_"+name,   pname+"DIR |= BIT"+ str(bit))
             pin.append("GPIO_Pin_"+bit)
-            pins.append([direction,desc,i,bit])
+            pins.append([direction, desc, i, bit])
 
     if len(pout) > 0 or len(pin) > 0:
         c.m << ""
@@ -140,7 +143,7 @@ for direction, desc, port, bit in pins:
                         "}"])
         
     if direction in ["IN", "IN/OUT"]:
-        c.sr.add(name, ["ret = ((GPIO"+port+"->IDR & GPIO_Pin_"+bit+") == GPIO_Pin_"+bit+");"])
+        c.add_in(desc, "((GPIO"+port+"->IDR & GPIO_Pin_"+bit+") == GPIO_Pin_"+bit+")")
 
     pinId += 1
 
