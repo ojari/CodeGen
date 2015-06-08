@@ -1,0 +1,76 @@
+* CFG 0x8000
+
+ - x:2 8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,12.5,13.0,13.5,14.0,14.5,15.0,15.5,16.0
+ - b:3 -,433,868,915
+ - ef:1 /enable data
+ - el:1 /enable fifo
+
+* PWR 0x8200
+
+ - dc:1 /disable clock
+ - ew:1 /enable wakeup
+ - eb:1 /enable bat low
+ - ex:1 /xtal on
+ - es:1 /synth on
+ - et:1 /pll on
+ - ebb:1 /rec baseband
+ - er:1 /receiver
+
+* FREQ 0xA000
+
+ - f:12
+
+* DR 0xC600
+
+ - r:7
+ - cs:1
+
+* RCC 0x9000
+
+ - r:3 -103,-97,-91,-85,-79,-73,-,-
+ - g:2 0,-6,-14,-20
+ - i:3 -,400,340,270,200,134,67,-
+ - d:2 fast,medium,slow,always
+ - p16:1
+
+* DATAFILTER 0xC200
+
+ - f:3
+ - 1
+ - s:1
+ - 1
+ - ml:1
+ - al:1
+
+* FIFOMODE 0xCA00
+
+ - dr:1
+ - ff:1
+ - al:1
+ - sp:1
+ - f:4
+
+* PATTERN 0xCE00
+
+ - b:8
+
+* RECEIVE 0xB000
+
+* AFC 0xC400
+
+ - en:1
+ - oe:1
+ - fi:1
+ - st:1
+ - rl:2
+ - a:2
+
+* TXCFG 0x9800
+
+ - p:3 0,-2.5,-5,-7.5,-10,-12.5,-15,-17.5
+ - 0
+ - m:4
+ - mp:1
+
+
+ 
