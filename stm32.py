@@ -9,8 +9,8 @@ PATH = "../stm32/"
 #PATH="../ha/"
 
 
-def writeFile(c):
-    f = OCFile(c.name, PATH,
+def writeFile(fname, c):
+    f = OCFile(fname, PATH,
                includes=["stm32f0xx.h"])
     c.genC(f)
     f.close()
@@ -131,7 +131,7 @@ pinId = 1
 for direction, desc, port, bit in pins:
     name = "PIN_"+desc
 
-    c.add(name,
+    c.add(desc,
           "GPIO"+port+"->BSRR = GPIO_Pin_"+bit,
           "GPIO"+port+"->BRR = GPIO_Pin_"+bit)
 
@@ -148,4 +148,4 @@ for direction, desc, port, bit in pins:
     pinId += 1
 
 c.mr << "return ret;"
-writeFile(c.c)
+writeFile("config", c.c)
