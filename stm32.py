@@ -6,7 +6,7 @@ from parseOrg import ParseOrg
 from config import Config
 
 PATH = "../stm32/"
-#PATH="../"
+#PATH="../ha/"
 
 
 def writeFile(c):

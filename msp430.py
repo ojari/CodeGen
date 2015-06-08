@@ -15,10 +15,10 @@ def writeFile(c):
     f.close()
 
 
-def writeFile2(c1, c2):
-    f = OCFile(c1.name, PATH, includes=["hw.h"])
-    c1.genC(f)
-    c2.genC(f)
+def writeFileN(fname, *classes):
+    f = OCFile(fname, PATH, includes=["hw.h"])
+    for c in classes:
+        c.genC(f)
     f.close()
 
 
@@ -88,11 +88,11 @@ for i in [1, 2]:
         if direction in ["IN", "IN/OUT"]:
             cfg.add_in(name, "((" + pname + "IN & " + bname + ") == " + bname + ")")
 
-            cfg.sm.add(name, [pname + "DIR &= ~" + bname + ";",
-                              "if (out)",
-                              "{",
-                              pname + "DIR |= " + bname + ";",
-                              "}"])
+            cfg.sm.add("PIN_"+name, [pname + "DIR &= ~" + bname + ";",
+                                     "if (out)",
+                                     "{",
+                                     pname + "DIR |= " + bname + ";",
+                                     "}"])
         if direction in ["IN/OUT"]:
             cfg.c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
             cfg.c << OMacro("out_"+name, pname+"DIR |= "+bname)
@@ -102,7 +102,7 @@ for i in [1, 2]:
         cfg.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 
 cfg.mr << "return ret;"
-writeFile(cfg.c)
+writeFileN("config", cfg.c, cfg.cspi)
 exit(0)
 
 writeFile(sc)
