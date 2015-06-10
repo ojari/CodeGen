@@ -22,6 +22,12 @@ def writeFile2(c1,c2):
     c2.genC(f)
     f.close()
 
+def writeFileN(fname, *classes):
+    f = OCFile(fname, PATH, includes=["hw.h"])
+    for c in classes:
+        c.genC(f)
+    f.close()
+
 
 class Int(OArg):
     def __init__(self, name):
@@ -148,4 +154,4 @@ for direction, desc, port, bit in pins:
     pinId += 1
 
 c.mr << "return ret;"
-writeFile("config", c.c)
+writeFileN("config", c.c, c.cspi)

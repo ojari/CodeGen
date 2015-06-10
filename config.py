@@ -1,7 +1,7 @@
 #
 # Copyright 2014 Jari Ojanen
 #
-from codegen import OClass, OMethod, OSwitch, OArg, OMacro
+from codegen import OClass, OMethod, OSwitch, OArg, OMacro, PUBLIC, REMEMBER
 
 BYTE = "uint8_t"
 
@@ -37,13 +37,16 @@ class Config:
         #----------------------------------------------------------------------
         self.cspi = OClass("spi")
         
-        self.spi_init = OMethod("init", "void")
+        self.spi_init = OMethod("init", "void",
+                                mods={PUBLIC,REMEMBER})
         self.cspi << self.spi_init
 
-        self.spi_tx = OMethod("tx", "void", [OArg("val", BYTE)])
+        self.spi_tx = OMethod("tx", "void", [OArg("val", BYTE)],
+                              mods={PUBLIC,REMEMBER})
         self.cspi << self.spi_tx
 
-        self.spi_rx = OMethod("rx", BYTE, [OArg("val", BYTE)])
+        self.spi_rx = OMethod("rx", BYTE, [OArg("val", BYTE)],
+                              mods={PUBLIC,REMEMBER})
         self.cspi << self.spi_rx
         
 

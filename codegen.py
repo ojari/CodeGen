@@ -9,7 +9,7 @@ STATIC    = "static"
 TEST      = "test"
 GETTER    = "getter"
 SETTER    = "setter"
-
+REMEMBER  = "remember"
 
 def q(s):
     return "\""+s+"\""
@@ -142,11 +142,15 @@ class OMethod(OBase):
         f.c << ""
         f.c << self.ctype + " " + funcname + " " + self.arg()
         f.c << "{"
+        if REMEMBER in self.mods:
+            f.c << "//{BEGIN:"+funcname+"}"
         for code in self.code:
             if isinstance(code, OBase):
                 code.genC(f)
             else:
                 f.c << code
+        if REMEMBER in self.mods:
+            f.c << "//{END:"+funcname+"}"
         f.c << "}"
         
         if PUBLIC in self.mods:
@@ -182,7 +186,6 @@ class OClass(OBase):
         for m in self.members:
             m.genCPP(fh, fc)
         fh << "};"
-
 
     def genC(self, f):
         for m in self.members:
