@@ -14,6 +14,28 @@ REMEMBER  = "remember"
 def q(s):
     return "\""+s+"\""
 
+def writeFile(c, path):
+    f = OCFile(c.name, path, includes=["hw.h"])
+    c.genC(f)
+    f.close()
+
+
+def writeFileN(fname, path, *classes):
+    f = OCFile(fname, path, includes=["hw.h"])
+    for c in classes:
+        c.genC(f)
+    f.close()
+
+
+class OBlock(object):
+    def __init__(self, parent):
+        self.parent = parent
+
+    def __enter__(self):
+        self.parent << "{"
+
+    def __exit__(self,a,b,c):
+        self.parent << "}"
 
 class OFile(object):
     def __init__(self, fname):
@@ -21,11 +43,15 @@ class OFile(object):
         self.f = open(fname, "wt")
         self.indent = 0
 
+    def block(self, pre):
+        self << pre
+        return OBlock(self)
+
     def __lshift__(self, s):
         if s == "}":
             self.indent -= 1
         #print ("\t"*self.indent) + self.line
-        self.f.write(("\t"*self.indent) + s + "\n")
+        self.f.write(("    "*self.indent) + s + "\n")
         if s == "{" or s.startswith("case "):
             self.indent += 1
         if s == "break;":
@@ -121,37 +147,31 @@ class OMethod(OBase):
     def genCS(self, f):
         if TEST in self.mods:
             f << "[TestMethod]"
-        f << self.csMods() + self.ctype + " " + self.name + " " + self.arg()
-        f << "{"
-        for code in self.code:
-            f << code
-        f << "}"
+        with f.block(self.csMods() + self.ctype + " " + self.name + " " + self.arg()):
+            for code in self.code:
+                f << code
 
     def genCPP(self, fh, fc):
         fh << self.csMods() + self.ctype + " " + self.name + self.arg() + ";"
 
-        fc << self.ctype + " " + self.parent.name + "::" + self.name + self.arg()
-        fc << "{"
-        for code in self.code:
-            fc << code
-        fc << "}"
+        with fc.block(self.ctype + " " + self.parent.name + "::" + self.name + self.arg()):
+            for code in self.code:
+                fc << code
 
     def genC(self, f):
         funcname = self.parent.name + "_" + self.name
 
         f.c << ""
-        f.c << self.ctype + " " + funcname + " " + self.arg()
-        f.c << "{"
-        if REMEMBER in self.mods:
-            f.c << "//{BEGIN:"+funcname+"}"
-        for code in self.code:
-            if isinstance(code, OBase):
-                code.genC(f)
-            else:
-                f.c << code
-        if REMEMBER in self.mods:
-            f.c << "//{END:"+funcname+"}"
-        f.c << "}"
+        with f.c.block(self.ctype + " " + funcname + " " + self.arg()):
+            if REMEMBER in self.mods:
+                f.c << "//{BEGIN:"+funcname+"}"
+            for code in self.code:
+                if isinstance(code, OBase):
+                    code.genC(f)
+                else:
+                    f.c << code
+            if REMEMBER in self.mods:
+                f.c << "//{END:"+funcname+"}"
         
         if PUBLIC in self.mods:
             f.h << "extern " + self.ctype + " " + funcname + " " + self.arg() + ";"
@@ -174,18 +194,15 @@ class OClass(OBase):
     def genCS(self, f):
         if TEST in self.mods:
             f << "[TestClass]"
-        f << self.csMods() + "class " + self.name
-        f << "{"
-        for m in self.members:
-            m.genCS(f)
-        f << "}"
+        with f.block(self.csMods() + "class " + self.name):
+            for m in self.members:
+                m.genCS(f)
 
     def genCPP(self, fh, fc):
-        fh << self.csMods() + "class " + self.name
-        fh << "{"
-        for m in self.members:
-            m.genCPP(fh, fc)
-        fh << "};"
+        with fh.block(self.csMods() + "class " + self.name):
+            for m in self.members:
+                m.genCPP(fh, fc)
+            fh << ";"
 
     def genC(self, f):
         for m in self.members:
@@ -206,12 +223,9 @@ class OStruct(OBase):
         return self
 
     def genC(self, f):
-        print(f)
-        f.h << "typedef struct"
-        f.h << "{"
-        for m in self.members:
-            m.genC(f)
-        f.h << "}"
+        with f.h.block("typedef struct"):
+            for m in self.members:
+                m.genC(f)
         f.h << self.name + "_t;"
 
 
@@ -226,14 +240,12 @@ class OSwitch(OBase):
 
     def genC(self, f):
         print(f)
-        f.c << "switch (" + self.name + ")"
-        f.c << "{"
-        for cond, code in self.members:
-            f.c << "case " + cond + ":"
-            for line in code:
-                f.c << line
-            f.c << "break;"
-        f.c << "}"
+        with f.c.block("switch (" + self.name + ")"):
+            for cond, code in self.members:
+                f.c << "case " + cond + ":"
+                for line in code:
+                    f.c << line
+                f.c << "break;"
 
         
 class OTestClass(OClass):

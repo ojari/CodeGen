@@ -1,25 +1,12 @@
 #
 # Copyright 2014 Jari Ojanen
 #
-from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
+from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, writeFile, writeFileN
 from parseOrg import ParseOrg
 from config import Config
 
-#PATH="../msp430/"
-PATH = "../ha/"
-
-
-def writeFile(c):
-    f = OCFile(c.name, PATH, includes=["hw.h"])
-    c.genC(f)
-    f.close()
-
-
-def writeFileN(fname, *classes):
-    f = OCFile(fname, PATH, includes=["hw.h"])
-    for c in classes:
-        c.genC(f)
-    f.close()
+PATH="../msp430/"
+#PATH = "../ha/"
 
 
 class Int(OArg):
@@ -57,7 +44,7 @@ def gen_class(cname, attribs, methods):
         if mname.startswith("_"):
             m = OMethod(mname[1:], "void", args, mods={PRIVATE})
         c << m
-    writeFile(c)
+    writeFile(c, PATH)
 
 
 # Read MSP430 pin configuration from text file and generate macros to access output pins.
@@ -102,10 +89,10 @@ for i in [1, 2]:
         cfg.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 
 cfg.mr << "return ret;"
-writeFileN("config", cfg.c, cfg.cspi)
+writeFileN("config", PATH, cfg.c, cfg.cspi)
 exit(0)
 
-writeFile(sc)
+writeFile(sc, PATH)
 
 gen_class("fifo", 
           [["bufPtr", "void*"],
