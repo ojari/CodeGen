@@ -1,12 +1,15 @@
-MODULE = "RF12B"
+from codegen import OClass, OMacro, writeFile
 
-def define(lst, value):
-    print("#define " + ("_".join(lst)) + " " + str(value))
+MODULE = "rfm12b"
+PATH = "../Drivers/"
 
-def HandleCommand(f, header):
+cc = OClass(MODULE)
+
+def HandleCommand(f, header):xf
     cmd,addr = header.split(" ")
 
-    define([MODULE, "CMD", cmd], addr)
+    cc << OMacro("_".join([MODULE.upper(), "CMD", cmd]),  
+                 addr)
 
     bit = 0
     while 1:
@@ -24,7 +27,8 @@ def HandleCommand(f, header):
         bname, blen = line.split(":")
         
         if blen=="1":
-            define([MODULE, cmd, bname.upper()], "BIT_"+str(bit))
+            cc << OMacro("_".join([MODULE.upper(), cmd ,bname.upper()]), 
+                         "BIT_"+str(bit))
         else:
             print("\t" + str(bit)+ " - " + bname + "." + blen + ".")
         bit += int(blen)
@@ -42,3 +46,6 @@ while 1:
     if line.startswith("*"):
         f.readline()
         HandleCommand(f, line[2:].strip())
+
+
+writeFile(cc, PATH)
