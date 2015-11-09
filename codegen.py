@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Jari Ojanen
+# Copyright 2014-5 Jari Ojanen
 #
 
 PRIVATE   = "private"
@@ -10,6 +10,10 @@ TEST      = "test"
 GETTER    = "getter"
 SETTER    = "setter"
 REMEMBER  = "remember"
+
+from functools import wraps
+
+CLASSES = []
 
 def q(s):
     return "\""+s+"\""
@@ -23,9 +27,29 @@ def writeFile(c, path):
 def writeFileN(fname, path, *classes):
     f = OCFile(fname, path, includes=["hw.h"])
     for c in classes:
-        c.genC(f)
+        if isinstance(c, list):
+            for ci in c:
+                ci.genC(f)
+        else:
+            c.genC(f)
     f.close()
 
+
+def export(rtype):
+    def func_wrap(func):
+        func.export = 1
+        func.rtype = rtype
+        #print(func.__name__)
+        #print(func)
+        @wraps(func)
+        def rfunc(*args, **kwargs):
+            return func(*args, **kwargs)
+        return rfunc
+    return func_wrap
+
+def exportclass(oclass):
+    CLASSES.append(oclass)
+    return oclass
 
 class OBlock(object):
     def __init__(self, parent):

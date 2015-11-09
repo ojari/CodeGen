@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Jari Ojanen
+# Copyright 2014-5 Jari Ojanen
 #
 from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, OSwitch
 from parseOrg import ParseOrg
@@ -7,13 +7,6 @@ from config import Config
 
 PATH = "../stm32/"
 #PATH="../ha/"
-
-
-def writeFile(fname, c):
-    f = OCFile(fname, PATH,
-               includes=["stm32f0xx.h"])
-    c.genC(f)
-    f.close()
 
 
 def writeFile2(c1,c2):
