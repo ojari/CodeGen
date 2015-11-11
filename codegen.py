@@ -11,6 +11,11 @@ GETTER    = "getter"
 SETTER    = "setter"
 REMEMBER  = "remember"
 
+from functools import wraps
+
+CLASSES = []
+INSTANCES = []
+
 def q(s):
     return "\""+s+"\""
 
@@ -23,9 +28,48 @@ def writeFile(c, path):
 def writeFileN(fname, path, *classes):
     f = OCFile(fname, path, includes=["hw.h"])
     for c in classes:
-        c.genC(f)
+        if isinstance(c, list):
+            for ci in c:
+                ci.genC(f)
+        else:
+            c.genC(f)
     f.close()
 
+
+def export(rtype):
+    def func_wrap(func):
+        func.export = 1
+        func.rtype = rtype
+        #print(func.__name__)
+        #print(func)
+        @wraps(func)
+        def rfunc(*args, **kwargs):
+            return func(*args, **kwargs)
+        return rfunc
+    return func_wrap
+
+def exportclass(oclass):
+    CLASSES.append(oclass)
+    return oclass
+
+def processExports():
+    for c in CLASSES:
+        o = c()
+        m = [getattr(o,x) for x in dir(o) if "export" in dir(getattr(o,x))]
+
+        for fn in m:
+            meth = OMethod(fn.__name__, fn.rtype)
+            fn(meth)
+            o << meth
+    
+        INSTANCES.append(o)
+
+
+def getInstance(name):
+    for i in INSTANCES:
+        if i.name == name:
+            return i
+    return None
 
 class OBlock(object):
     def __init__(self, parent):

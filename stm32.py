@@ -2,18 +2,12 @@
 # Copyright 2014 Jari Ojanen
 #
 from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, OSwitch
+from codegen import processExports, getInstance
 from parseOrg import ParseOrg
-from config import Config
+from config import spi,port
 
 PATH = "../stm32/"
 #PATH="../ha/"
-
-
-def writeFile(fname, c):
-    f = OCFile(fname, PATH,
-               includes=["stm32f0xx.h"])
-    c.genC(f)
-    f.close()
 
 
 def writeFile2(c1,c2):
@@ -70,7 +64,11 @@ def gen_class(cname, attribs, methods):
 # Read STM32 pin configuration from text file and generate macros to access output pins.
 #
 p = ParseOrg("stm32.org")
-c = Config()
+
+processExports()
+
+c = getInstance("port")
+spi = getInstance("spi")
 
 c.m << "GPIO_InitTypeDef ioInit;"
 
@@ -86,9 +84,9 @@ for i in ['A', 'B', 'C']:
             paf.append(["GPIO_Pin_"+bit, af])
             continue
         if direction in ["OUT", "IN/OUT"]:
-            c.c << OMacro("set_"+desc,    "GPIO"+i+"->BSRR = GPIO_Pin_"+bit)
-            c.c << OMacro("clr_"+desc,    "GPIO"+i+"->BRR  = GPIO_Pin_"+bit)
-            c.c << OMacro("toggle_"+desc, "GPIO"+i+"->ODR ^= GPIO_Pin_"+bit)
+            c << OMacro("set_"+desc,    "GPIO"+i+"->BSRR = GPIO_Pin_"+bit)
+            c << OMacro("clr_"+desc,    "GPIO"+i+"->BRR  = GPIO_Pin_"+bit)
+            c << OMacro("toggle_"+desc, "GPIO"+i+"->ODR ^= GPIO_Pin_"+bit)
 
             pout.append("GPIO_Pin_"+bit)
             pins.append([direction,desc,i,bit])
@@ -154,4 +152,4 @@ for direction, desc, port, bit in pins:
     pinId += 1
 
 c.mr << "return ret;"
-writeFileN("config", c.c, c.cspi)
+writeFileN("config", c, spi)

@@ -1,61 +1,79 @@
 #
-# Copyright 2014 Jari Ojanen
+# Copyright 2014-5 Jari Ojanen
 #
 from codegen import OClass, OMethod, OSwitch, OArg, OMacro, PUBLIC, REMEMBER
+from codegen import export, exportclass
 
 BYTE = "uint8_t"
+VOID = "void"
 
-class Config:
+@exportclass
+class spi(OClass):
     def __init__(self):
+        OClass.__init__(self, "spi")
+
+    @export(VOID)
+    def init(self, meth):
+        meth.mods = {PUBLIC,REMEMBER}
+        meth.args = []
+
+    @export(VOID)
+    def tx(self, meth):
+        meth.mods = {PUBLIC,REMEMBER}
+        meth.args = [OArg("val", BYTE)]
+
+    @export(VOID)
+    def rx(self, meth):
+        meth.mods = {PUBLIC,REMEMBER}
+        meth.args = [OArg("val", BYTE)]
+
+
+@exportclass
+class port(OClass):
+    def __init__(self):
+        OClass.__init__(self, "port")
         self.pin_id = 1
 
-        self.c = OClass("io")
-        self.m = OMethod("init", "void")
-        self.c << self.m
+    @export(VOID)
+    def init(self, meth):
+        self.m = meth
 
-        self._ms = OMethod("set", "void", [OArg("pin", BYTE)])
-        self._ss = OSwitch("pin")
-        self._ms << self._ss
-        self.c << self._ms
+    @export(VOID)
+    def set(self, meth):
+        meth.args = [OArg("pin", BYTE)]
+        self.ss = OSwitch("pin")
+        meth << self.ss
 
-        self._mc = OMethod("clear", "void", [OArg("pin", BYTE)])
-        self._sc = OSwitch("pin")
-        self._mc << self._sc
-        self.c << self._mc
+    @export(VOID)
+    def clear(self, meth):
+        meth.args = [OArg("pin", BYTE)]
+        self.sc = OSwitch("pin")
+        meth << self.sc
 
-        self.mm = OMethod("mode", "void", [OArg("pin", BYTE), OArg("out", BYTE)])
+    @export(VOID)
+    def mode(self, meth):
+        meth.args = [OArg("pin", BYTE), OArg("out", BYTE)]
         self.sm = OSwitch("pin")
-        self.mm << self.sm
-        self.c << self.mm
+        meth << self.sm
 
-        self.mr = OMethod("read", BYTE, [OArg("pin", BYTE)])
+    @export(BYTE)
+    def read(self, meth):
+        meth.args = [OArg("pin", BYTE)]
         self.sr = OSwitch("pin")
-        self.mr << "uint8_t ret=0;"
-        self.mr << self.sr
-        self.c << self.mr
 
-        #----------------------------------------------------------------------
-        self.cspi = OClass("spi")
-        
-        self.spi_init = OMethod("init", "void",
-                                mods={PUBLIC,REMEMBER})
-        self.cspi << self.spi_init
+        meth << "uint8_t ret=0;"
+        meth << self.sr
 
-        self.spi_tx = OMethod("tx", "void", [OArg("val", BYTE)],
-                              mods={PUBLIC,REMEMBER})
-        self.cspi << self.spi_tx
-
-        self.spi_rx = OMethod("rx", BYTE, [OArg("val", BYTE)],
-                              mods={PUBLIC,REMEMBER})
-        self.cspi << self.spi_rx
-        
+        self.mr = meth
 
     def add(self, name, oper_set, oper_clear):
-        self._ss.add("PIN_"+name, [oper_set + ";"])
-        self._sc.add("PIN_"+name, [oper_clear + ";"])
-        self.c << OMacro("PIN_"+name, str(self.pin_id))
+        self.ss.add("PIN_"+name, [oper_set + ";"])
+        self.sc.add("PIN_"+name, [oper_clear + ";"])
+        self << OMacro("PIN_"+name, str(self.pin_id))
         self.pin_id += 1
 
 
     def add_in(self, name, oper):
         self.sr.add("PIN_"+name, ["ret = " + oper + ";"])
+
+
