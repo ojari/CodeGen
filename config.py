@@ -6,23 +6,24 @@ from codegen import export, exportclass, CLASSES
 from codegen import writeFileN
 
 BYTE = "uint8_t"
+VOID = "void"
 
 @exportclass
 class spi(OClass):
     def __init__(self):
         OClass.__init__(self, "spi")
 
-    @export("void")
+    @export(VOID)
     def init(self, meth):
         meth.mods = {PUBLIC,REMEMBER}
         meth.args = []
 
-    @export("void")
+    @export(VOID)
     def tx(self, meth):
         meth.mods = {PUBLIC,REMEMBER}
         meth.args = [OArg("val", BYTE)]
 
-    @export("void")
+    @export(VOID)
     def rx(self, meth):
         meth.mods = {PUBLIC,REMEMBER}
         meth.args = [OArg("val", BYTE)]
@@ -32,24 +33,25 @@ class spi(OClass):
 class port(OClass):
     def __init__(self):
         OClass.__init__(self, "port")
+        self.pin_id = 1
 
-    @export("void")
+    @export(VOID)
     def init(self, meth):
-        pass
+        self.m = meth
 
-    @export("void")
+    @export(VOID)
     def set(self, meth):
         meth.args = [OArg("pin", BYTE)]
         self.ss = OSwitch("pin")
         meth << self.ss
 
-    @export("void")
+    @export(VOID)
     def clear(self, meth):
         meth.args = [OArg("pin", BYTE)]
         self.sc = OSwitch("pin")
         meth << self.sc
 
-    @export("void")
+    @export(VOID)
     def mode(self, meth):
         meth.args = [OArg("pin", BYTE), OArg("out", BYTE)]
         self.sm = OSwitch("pin")

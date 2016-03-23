@@ -14,6 +14,7 @@ REMEMBER  = "remember"
 from functools import wraps
 
 CLASSES = []
+INSTANCES = []
 
 def q(s):
     return "\""+s+"\""
@@ -50,6 +51,25 @@ def export(rtype):
 def exportclass(oclass):
     CLASSES.append(oclass)
     return oclass
+
+def processExports():
+    for c in CLASSES:
+        o = c()
+        m = [getattr(o,x) for x in dir(o) if "export" in dir(getattr(o,x))]
+
+        for fn in m:
+            meth = OMethod(fn.__name__, fn.rtype)
+            fn(meth)
+            o << meth
+    
+        INSTANCES.append(o)
+
+
+def getInstance(name):
+    for i in INSTANCES:
+        if i.name == name:
+            return i
+    return None
 
 class OBlock(object):
     def __init__(self, parent):
