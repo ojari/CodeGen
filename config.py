@@ -3,13 +3,12 @@
 #
 from codegen import OClass, OMethod, OSwitch, OArg, OMacro, PUBLIC, REMEMBER
 from codegen import export, exportclass, CLASSES
-from codegen import writeFileN
 
 BYTE = "uint8_t"
 VOID = "void"
 
 @exportclass
-class spi(OClass):
+class Spi(OClass):
     def __init__(self):
         OClass.__init__(self, "spi")
 
@@ -30,7 +29,7 @@ class spi(OClass):
 
 
 @exportclass
-class port(OClass):
+class Port(OClass):
     def __init__(self):
         OClass.__init__(self, "port")
         self.pin_id = 1
@@ -64,7 +63,18 @@ class port(OClass):
 
         meth << "uint8_t ret=0;"
         meth << self.sr
-    
+        meth << "return ret;"
+ 
+    def add(self, name, oper_set, oper_clear):
+        self.ss.add("PIN_"+name, [oper_set + ";"])
+        self.sc.add("PIN_"+name, [oper_clear + ";"])
+        self << OMacro("PIN_"+name, str(self.pin_id))
+        self.pin_id += 1
+
+
+    def add_in(self, name, oper):
+        self.sr.add("PIN_"+name, ["ret = " + oper + ";"])
+       
 INSTANCES = []
 
 for c in CLASSES:
@@ -78,26 +88,9 @@ for c in CLASSES:
     
     INSTANCES.append(o)
 
-#writeFileN("test", "", INSTANCES)
+#write_file_n("test", "", INSTANCES)
 def getInstance(name):
     for i in INSTANCES:
         if i.name == name:
             return i
     return None
-
-    
-class Config:
-    def __init__(self):
-        self.pin_id = 1
-
-        self.obj = getInstance("port")
-
-    def add(self, name, oper_set, oper_clear):
-        self.obj.ss.add("PIN_"+name, [oper_set + ";"])
-        self.obj.sc.add("PIN_"+name, [oper_clear + ";"])
-        self.obj << OMacro("PIN_"+name, str(self.pin_id))
-        self.pin_id += 1
-
-
-    def add_in(self, name, oper):
-        self.obj.sr.add("PIN_"+name, ["ret = " + oper + ";"])

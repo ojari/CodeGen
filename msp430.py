@@ -1,13 +1,13 @@
 #
 # Copyright 2014 Jari Ojanen
 #
-from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, writeFile, writeFileN
+from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
+from codegen import processExports, getInstance, write_file, write_file_n
 from parseOrg import ParseOrg
-from config import Config
+from config import Spi, Port
 
-PATH="../msp430/"
-#PATH = "../ha/"
-
+PATH = "../msp430/"
+#PATH = "tmp/"
 
 class Int(OArg):
     def __init__(self, name):
@@ -44,14 +44,17 @@ def gen_class(cname, attribs, methods):
         if mname.startswith("_"):
             m = OMethod(mname[1:], "void", args, mods={PRIVATE})
         c << m
-    writeFile(c, PATH)
+    write_file(c, PATH)
 
 
 # Read MSP430 pin configuration from text file and generate macros to access output pins.
 #
 p = ParseOrg("launchpad.org")
-cfg = Config()
-sc = OClass("port_sim")
+#sc = OClass("port_sim")
+
+processExports()
+c = getInstance("port")
+spi = getInstance("spi")
 
 for i in [1, 2]:
     pdir = []
@@ -59,40 +62,39 @@ for i in [1, 2]:
     for bit, direction, name in p.parse()[1:]:
         bname = "BIT"+str(bit)
         if direction in ["OUT", "IN/OUT"]:
-            cfg.c << OMacro("set_"+name, pname+"OUT |= "+bname)
-            cfg.c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
-            cfg.c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
+            c << OMacro("set_"+name, pname+"OUT |= "+bname)
+            c << OMacro("clr_"+name, pname+"OUT &= ~"+bname)
+            c << OMacro("toggle_"+name, pname+"OUT ^= "+bname)
             pdir.append(bname)
 
-            cfg.add(name,
+            c.add(name,
                   pname+"OUT |= "+bname,
                   pname+"OUT &= ~"+bname)
 
-            sc << OMacro("set_"+name,    "bit_set(\""+name+"\")")
-            sc << OMacro("clr_"+name,    "bit_clr(\""+name+"\")")
-            sc << OMacro("toggle_"+name, "bit_toggle(\""+name+"\")")
+            #sc << OMacro("set_"+name,    "bit_set(\""+name+"\")")
+            #sc << OMacro("clr_"+name,    "bit_clr(\""+name+"\")")
+            #sc << OMacro("toggle_"+name, "bit_toggle(\""+name+"\")")
 
         if direction in ["IN", "IN/OUT"]:
-            cfg.add_in(name, "((" + pname + "IN & " + bname + ") == " + bname + ")")
+            c.add_in(name, "((" + pname + "IN & " + bname + ") == " + bname + ")")
 
-            cfg.sm.add("PIN_"+name, [pname + "DIR &= ~" + bname + ";",
-                                     "if (out)",
-                                     "{",
-                                     pname + "DIR |= " + bname + ";",
-                                     "}"])
+            c.sm.add("PIN_"+name, [pname + "DIR &= ~" + bname + ";",
+                                   "if (out)",
+                                   "{",
+                                   pname + "DIR |= " + bname + ";",
+                                   "}"])
         if direction in ["IN/OUT"]:
-            cfg.c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
-            cfg.c << OMacro("out_"+name, pname+"DIR |= "+bname)
-            cfg.c << OMacro("in_"+name,  pname+"DIR &= ~"+bname)
+            c << OMacro("get_"+name, "("+pname+"IN & "+bname+") == "+bname)
+            c << OMacro("out_"+name, pname+"DIR |= "+bname)
+            c << OMacro("in_"+name,  pname+"DIR &= ~"+bname)
             
     if len(pdir) > 0:
-        cfg.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
+        c.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 
-cfg.mr << "return ret;"
-writeFileN("config", PATH, cfg.c, cfg.cspi)
+write_file_n("config", PATH, c, spi)
 exit(0)
 
-writeFile(sc, PATH)
+#write_file(sc, PATH)
 
 gen_class("fifo", 
           [["bufPtr", "void*"],

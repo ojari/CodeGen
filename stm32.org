@@ -3,9 +3,9 @@
 |  A | AF | Description | Direction |
 |----+----+-------------+-----------|
 |  0 |    | BUTTON      | IN        |
-|  1 |    | BTN1        | IN        |
-|  2 |    | BTN2        | IN        |
-|  3 |    | BTN3        | IN        |
+|  1 |    |             |           |
+|  2 |    |             |           |
+|  3 |    |             |           |
 |  4 |    |             |           |
 |  5 |  0 | SPI1 SCK    |           |
 |  6 |  0 | SPI1 MISO   |           |
@@ -22,9 +22,9 @@
 
 |  B | AF | Description | Direction |
 |----+----+-------------+-----------|
-|  0 |    | CS_RFM12B   | OUT       |
-|  1 |    | CS_W5200    | OUT       |
-|  2 |    | CS_SDCARD   | OUT       |
+|  0 |    |             |           |
+|  1 |    |             |           |
+|  2 |    |             |           |
 |  3 |    | TEMP2       | IN/OUT    |
 |  4 |    | TEMP3       | IN/OUT    |
 |  5 |    | TEMP4       | IN/OUT    |
@@ -50,8 +50,8 @@
 |  5 |    |             |           |
 |  6 |    |             |           |
 |  7 |    |             |           |
-|  8 |    | LED1        | OUT       |
-|  9 |    | LED2        | OUT       |
+|  8 |    | LED_BLUE    | OUT       |
+|  9 |    | LED_GREEN   | OUT       |
 | 10 |    | LCD_RS      | OUT       |
 | 11 |    | LCD_ENABLE  | OUT       |
 | 12 |    |             |           |

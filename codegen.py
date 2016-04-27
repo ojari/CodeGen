@@ -1,31 +1,50 @@
 #
-# Copyright 2014-5 Jari Ojanen
+# Copyright 2014-6 Jari Ojanen
 #
 
+# Possible values for OBase.mods list
+#
 PRIVATE   = "private"
 PROTECTED = "protected"
 PUBLIC    = "public"
 STATIC    = "static"
+FINAL     = "final"
 TEST      = "test"
 GETTER    = "getter"
 SETTER    = "setter"
-REMEMBER  = "remember"
+REMEMBER  = "remember"  # between code generations
+
+# Possible values for LANGUAGE
+#
+LANG_C    = "C"
+LANG_CPP  = "C++"
+LANG_CS   = "C#"
+LANG_JAVA = "JAVA"        # not supported yet
+LANG_JS   = "JAVASCRIPT"  # not supported yet
 
 from functools import wraps
 
 CLASSES = []
 INSTANCES = []
+LANGUAGE = LANG_C
+
 
 def q(s):
     return "\""+s+"\""
 
-def writeFile(c, path):
+
+def p(l):
+    a = ",".join(l)
+    return "("+a+")"
+
+
+def write_file(c, path):
     f = OCFile(c.name, path, includes=["hw.h"])
     c.genC(f)
     f.close()
 
 
-def writeFileN(fname, path, *classes):
+def write_file_n(fname, path, *classes):
     f = OCFile(fname, path, includes=["hw.h"])
     for c in classes:
         if isinstance(c, list):
@@ -84,15 +103,25 @@ class OBlock(object):
 class OFile(object):
     def __init__(self, fname):
         print("generating "+fname+"...")
+        self.fname = fname
         self.f = open(fname, "wt")
         self.indent = 0
+        self.includes = []
+
+        global LANGUAGE
+        if fname.endswith(".java"):
+            LANGUAGE = LANG_JAVA
+        elif fname.endswith(".cs"):
+            LANGUAGE = LANG_CS
+        elif fname.endswith(".js"):
+            LANGUAGE = LANG_JAVASCRIPT
 
     def block(self, pre):
         self << pre
         return OBlock(self)
 
     def __lshift__(self, s):
-        if s == "}":
+        if s in ["}", "};"]:
             self.indent -= 1
         #print ("\t"*self.indent) + self.line
         self.f.write(("    "*self.indent) + s + "\n")
@@ -100,10 +129,16 @@ class OFile(object):
             self.indent += 1
         if s == "break;":
             self.indent -= 1
+        return self
 
-    def addCsIncludes(self, includes):
-        for inc in includes:
-            self.f.write("using "+inc+";\n")
+    def addIncludes(self):
+        for inc in self.includes:
+            if LANGUAGE == LANG_CS:
+                self.f.write("using "+inc+";\n")
+            elif LANGUAGE == LANG_JAVA:
+                self.f.write("import "+inc+";\n")
+            else:
+                self.f.write("#include <"+inc+">\n")
         self.f.write("\n")
 
     def close(self):
@@ -144,7 +179,7 @@ class OBase(object):
         self.mods = mods
 
     def csMods(self):
-        visible = {PRIVATE, PROTECTED, PUBLIC, STATIC}
+        visible = {PRIVATE, PROTECTED, PUBLIC, STATIC, FINAL}
         
         return " ".join(visible.intersection(self.mods)) + " "
 
@@ -152,12 +187,16 @@ class OBase(object):
 class OArg(OBase):
     def __init__(self, name, ctype, mods={PRIVATE}):
         OBase.__init__(self, name, ctype, mods)
+        self.initial = None
 
     def genC(self, f):
         f.h << self.ctype + " " + self.name + ";"
 
     def genCS(self, f):
-        f << self.csMods() + self.ctype + " " + self.name + ";"
+        port = ""
+        if self.initial:
+            post = " = " + self.initial
+        f << self.csMods() + self.ctype + " " + self.name + post + ";"
 
     def argDef(self):
         return self.ctype + " " + self.name

@@ -1,4 +1,4 @@
-from codegen import OClass, OMacro, writeFile
+from codegen import OClass, OMacro, write_file
 
 MODULE = "rfm12b"
 PATH = "../Drivers/"
@@ -48,4 +48,4 @@ while 1:
         HandleCommand(f, line[2:].strip())
 
 
-writeFile(cc, PATH)
+write_file(cc, PATH)

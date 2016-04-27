@@ -2,26 +2,12 @@
 # Copyright 2014-5 Jari Ojanen
 #
 from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, OSwitch
-from codegen import processExports, getInstance
+from codegen import processExports, getInstance, write_file_n
 from parseOrg import ParseOrg
-from config import spi,port
+from config import Spi, Port
 
 PATH = "../stm32/"
-#PATH="../ha/"
-
-
-def writeFile2(c1,c2):
-    f = OCFile(c1.name, PATH)
-    c1.genC(f)
-    c2.genC(f)
-    f.close()
-
-def writeFileN(fname, *classes):
-    f = OCFile(fname, PATH, includes=["hw.h"])
-    for c in classes:
-        c.genC(f)
-    f.close()
-
+#PATH = "tmp/"
 
 class Int(OArg):
     def __init__(self, name):
@@ -89,7 +75,7 @@ for i in ['A', 'B', 'C']:
             c << OMacro("toggle_"+desc, "GPIO"+i+"->ODR ^= GPIO_Pin_"+bit)
 
             pout.append("GPIO_Pin_"+bit)
-            pins.append([direction,desc,i,bit])
+            pins.append([direction, desc, i, bit])
         if direction in ["IN"]:
             #c << OMacro("get_"+name,   "("+pname+"IN & BIT"+str(bit)+" == BIT"+str(bit)+")")
             #c << OMacro("in_"+name,    pname+"DIR &= ~BIT"+ str(bit))
@@ -118,7 +104,7 @@ for i in ['A', 'B', 'C']:
         c.m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
         c.m << "GPIO_Init(GPIO"+i+", &ioInit);"
     if len(paf) > 0:
-        afpins = [pin for pin,af in paf]
+        afpins = [pin for pin, af in paf]
         c.m << ""
         c.m << "ioInit.GPIO_Pin = " + (" | ".join(afpins)) + ";"
         c.m << "ioInit.GPIO_Mode = GPIO_Mode_AF;"
@@ -127,7 +113,7 @@ for i in ['A', 'B', 'C']:
         c.m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
         c.m << "GPIO_Init(GPIO"+i+", &ioInit);"
         c.m << ""
-        for item,af in paf:
+        for item, af in paf:
             psource = "GPIO_PinSource"+item[len("GPIO_Pin_"):]
             c.m << "GPIO_PinAFConfig(GPIO"+i+", "+psource+", "+af+");"
 
@@ -151,5 +137,4 @@ for direction, desc, port, bit in pins:
 
     pinId += 1
 
-c.mr << "return ret;"
-writeFileN("config", c, spi)
+write_file_n("config", PATH, c, spi)
