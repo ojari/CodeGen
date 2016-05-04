@@ -12,6 +12,8 @@ FINAL     = "final"
 TEST      = "test"
 GETTER    = "getter"
 SETTER    = "setter"
+OVERRIDE  = "override"
+DBVAR     = "db"
 REMEMBER  = "remember"  # between code generations
 
 # Possible values for LANGUAGE
@@ -178,25 +180,37 @@ class OBase(object):
         self.ctype = ctype
         self.mods = mods
 
-    def csMods(self):
-        visible = {PRIVATE, PROTECTED, PUBLIC, STATIC, FINAL}
+    def isGetter(self):
+        return GETTER in self.mods
+
+    def isSetter(self):
+        return SETTER in self.mods
+
+    def isOverride(self):
+        return OVERRIDE in self.mods
+
+    def isDbVal(self):
+        return DBVAR in self.mods
+        
+    def getMods(self):
+        visible = {FINAL, PRIVATE, PROTECTED, PUBLIC, STATIC}
         
         return " ".join(visible.intersection(self.mods)) + " "
 
 
 class OArg(OBase):
-    def __init__(self, name, ctype, mods={PRIVATE}):
+    def __init__(self, name, ctype, mods={PRIVATE}, initial=None):
         OBase.__init__(self, name, ctype, mods)
-        self.initial = None
+        self.initial = initial
 
     def genC(self, f):
         f.h << self.ctype + " " + self.name + ";"
 
     def genCS(self, f):
-        port = ""
+        post = ""
         if self.initial:
             post = " = " + self.initial
-        f << self.csMods() + self.ctype + " " + self.name + post + ";"
+        f << self.getMods() + self.ctype + " " + self.name + post + ";"
 
     def argDef(self):
         return self.ctype + " " + self.name
@@ -222,20 +236,23 @@ class OMethod(OBase):
         self.parent = None
 
     def arg(self):
-        if len(self.args) == 0:
+        if len(self.args) == 0 and (LANGUAGE == LANG_C):
             return "(void)"
         alist = [ a.argDef() for a in self.args]
         return "("+ (", ".join(alist)) + ")"
 
     def genCS(self, f):
+        f << ""
         if TEST in self.mods:
             f << "[TestMethod]"
-        with f.block(self.csMods() + self.ctype + " " + self.name + " " + self.arg()):
+        if self.isOverride():
+            f << "@Override"
+        with f.block(self.getMods() + self.ctype + " " + self.name + self.arg()):
             for code in self.code:
                 f << code
 
     def genCPP(self, fh, fc):
-        fh << self.csMods() + self.ctype + " " + self.name + self.arg() + ";"
+        fh << self.mods() + self.ctype + " " + self.name + self.arg() + ";"
 
         with fc.block(self.ctype + " " + self.parent.name + "::" + self.name + self.arg()):
             for code in self.code:
@@ -268,6 +285,7 @@ class OClass(OBase):
     def __init__(self, name, mods={PUBLIC}):
         OBase.__init__(self, name, name, mods)
         self.members = []
+        self.implements = []
 
     def __lshift__(self, m):
         m.parent = self
@@ -277,12 +295,18 @@ class OClass(OBase):
     def genCS(self, f):
         if TEST in self.mods:
             f << "[TestClass]"
-        with f.block(self.csMods() + "class " + self.name):
+
+        post = ""
+        if len(self.implements)>0:
+            post = " implements "
+            post += ", ".join(self.implements)
+
+        with f.block(self.getMods() + "class " + self.name + post):
             for m in self.members:
                 m.genCS(f)
 
     def genCPP(self, fh, fc):
-        with fh.block(self.csMods() + "class " + self.name):
+        with fh.block(self.getMods() + "class " + self.name):
             for m in self.members:
                 m.genCPP(fh, fc)
             fh << ";"
