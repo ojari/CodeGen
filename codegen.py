@@ -39,24 +39,6 @@ def p(l):
     a = ",".join(l)
     return "("+a+")"
 
-
-def write_file(c, path):
-    f = OCFile(c.name, path, includes=["hw.h"])
-    c.genC(f)
-    f.close()
-
-
-def write_file_n(fname, path, *classes):
-    f = OCFile(fname, path, includes=["hw.h"])
-    for c in classes:
-        if isinstance(c, list):
-            for ci in c:
-                ci.genC(f)
-        else:
-            c.genC(f)
-    f.close()
-
-
 def export(rtype):
     def func_wrap(func):
         func.export = 1
@@ -84,6 +66,16 @@ def processExports():
             o << meth
     
         INSTANCES.append(o)
+
+# If class needs contructor parameters or some processing,
+# this is replacement for processExports-getInstance system 
+#
+def handleExports(obj):
+    m = [getattr(obj,x) for x in dir(obj) if "export" in dir(getattr(obj,x))]
+    for fn in m:
+        meth = OMethod(fn.__name__, fn.rtype)
+        fn(meth)
+        obj << meth
 
 
 def getInstance(name):
@@ -154,7 +146,10 @@ class OCFile(object):
         if "stm32" in fpath:
             cExtra = "src/"
             hExtra = "inc/"
-        self.c = OFile(fpath+cExtra+fbase+".c")
+        ext = ".c"
+        if LANGUAGE == LANG_CPP:
+            ext = ".cpp"
+        self.c = OFile(fpath+cExtra+fbase+ext)
         self.h = OFile(fpath+hExtra+fbase+".h")
 
         self.h << "#ifndef _"+fbase.upper()+"_H"
@@ -180,6 +175,9 @@ class OBase(object):
         self.ctype = ctype
         self.mods = mods
 
+    def got(self, item):
+        return item in self.mods
+
     def isGetter(self):
         return GETTER in self.mods
 
@@ -194,6 +192,8 @@ class OBase(object):
         
     def getMods(self):
         visible = {FINAL, PRIVATE, PROTECTED, PUBLIC, STATIC}
+        if LANGUAGE == LANG_CPP:
+            visible = {STATIC}
         
         return " ".join(visible.intersection(self.mods)) + " "
 
@@ -204,6 +204,9 @@ class OArg(OBase):
         self.initial = initial
 
     def genC(self, f):
+        f.h << self.ctype + " " + self.name + ";"
+
+    def genCPP(self, f):
         f.h << self.ctype + " " + self.name + ";"
 
     def genCS(self, f):
@@ -251,12 +254,12 @@ class OMethod(OBase):
             for code in self.code:
                 f << code
 
-    def genCPP(self, fh, fc):
-        fh << self.mods() + self.ctype + " " + self.name + self.arg() + ";"
+    def genCPP(self, f):
+        f.h << self.getMods() + self.ctype + " " + self.name + self.arg() + ";"
 
-        with fc.block(self.ctype + " " + self.parent.name + "::" + self.name + self.arg()):
+        with f.c.block(self.ctype + " " + self.parent.name + "::" + self.name + self.arg()):
             for code in self.code:
-                fc << code
+                f.c << code
 
     def genC(self, f):
         funcname = self.parent.name + "_" + self.name
@@ -292,6 +295,17 @@ class OClass(OBase):
         self.members.append(m)
         return self
 
+    def makeGetsSets(self):
+        for i in self.members:
+            if i.isGetter():
+                m = OMethod("get_"+i.name, i.ctype, [])
+                m << "return "+i.name+";"
+                self << m
+            if i.isSetter():
+                m = OMethod("set_"+i.name, "void", [OArg("val", i.ctype)])
+                m << i.name+" = val;"
+                self << m
+
     def genCS(self, f):
         if TEST in self.mods:
             f << "[TestClass]"
@@ -305,11 +319,15 @@ class OClass(OBase):
             for m in self.members:
                 m.genCS(f)
 
-    def genCPP(self, fh, fc):
-        with fh.block(self.getMods() + "class " + self.name):
-            for m in self.members:
-                m.genCPP(fh, fc)
-            fh << ";"
+    def genCPP(self, f):
+        self.makeGetsSets()
+        with f.h.block(self.getMods() + "class " + self.name):
+            for prot in [PUBLIC, PROTECTED, PRIVATE]:
+                items = [x for x in self.members if x.got(prot)]
+                f.h << prot + ":"
+                for m in items:
+                    m.genCPP(f)
+        f.h << ";"
 
     def genC(self, f):
         for m in self.members:
@@ -358,3 +376,34 @@ class OSwitch(OBase):
 class OTestClass(OClass):
     def __init__(self, name):
         OClass.__init__(self, name, mods={PUBLIC,TEST})
+
+
+#-------------------------------------------------------------------------------
+def write_file(c, path):
+    f = OCFile(c.name, path, includes=["hw.h"])
+    c.genC(f)
+    f.close()
+
+def write_file_cs(c: OClass, fname: str):
+    f = OFile(fname)
+    c.genCS(f)
+    f.close()
+
+def write_file_cpp(c, path):
+    global LANGUAGE
+
+    LANGUAGE = LANG_CPP
+    f = OCFile(c.name, path, includes=[])
+    c.genCPP(f)
+    f.close()
+
+
+def write_file_n(fname, path, *classes):
+    f = OCFile(fname, path, includes=["hw.h"])
+    for c in classes:
+        if isinstance(c, list):
+            for ci in c:
+                ci.genC(f)
+        else:
+            c.genC(f)
+    f.close()
