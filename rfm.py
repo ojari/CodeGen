@@ -12,7 +12,7 @@ print("generating "+MODULE+"...")
 #MODULE="RFM12"
 
 def define(name, value):
-    print "#define "+"_".join(name)+" "+value
+    print("#define "+"_".join(name)+" "+value)
 
 def sbits(value, offset):
     ret = []
@@ -48,7 +48,7 @@ class Register:
                         if v < len(items) and items[v] != "-":
                             define([MODULE,self.name,reg.upper(),convValue(items[v])], sbits(v, cbit))
             else:
-                print "   ",reg,bits,cbit,2**bits
+                print("   ",reg,bits,cbit,2**bits)
             cbit += bits
 
 f = open(FNAME)
@@ -89,4 +89,4 @@ for line in f.readlines():
         pass
     
     else:
-        print " <"+line+">"
+        print(" <"+line+">")
