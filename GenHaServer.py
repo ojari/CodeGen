@@ -65,33 +65,42 @@ class Measure(OClass):
 
     @export(STR)
     def JsonGet(self, meth):
-        meth << "std::ostringstream os;"
-        meth << "os << \"{\";"
+        meth << "rapidjson::Document doc;"
+        meth << "doc.SetObject();"
         for v in self.dbargs:
-            meth << "os << \"\\\"" + v.name + "\\\":\" << " + v.name + " << \",\""
-        meth << "os << \"}\";"
-        meth << "return os.str();"
+            meth << "doc.AddMember(" + q(v.name) + ", " + v.name + ", doc.GetAllocator());"
+        meth << ""
+        meth << "rapidjson::StringBuffer strbuf;"
+        meth << "rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);"
+        meth << "doc.Accept(writer);"
+        meth << ""
+        meth << "return strbuf.GetString();"
 
     @export(VOID)
     def JsonSet(self, meth):
-        pass
+        meth.args = [OArg("json", "const char*")]
+
+        meth << "rapidjson::Document doc;"
+        meth << "doc.Parse(json);"
+        for v in self.dbargs:
+            meth << v.name + " = doc[" + q(v.name) + "];"
 
 #-----------------------------------------------------------------------
-ct = Measure("DbMeasure", FLDS_SERVER)
+ct = Measure("TblMeasure", FLDS_SERVER)
 handleExports(ct)
 write_file_cpp(ct, "tmp/")
 
 
-cs = Measure("DbWeather", FLDS_WEATHER)
+cs = Measure("TblWeather", FLDS_WEATHER)
 handleExports(cs)
 write_file_cpp(cs, "tmp/")
 
 
-cs = Measure("DbStock", FLDS_STOCK)
+cs = Measure("TblStock", FLDS_STOCK)
 handleExports(cs)
 write_file_cpp(cs, "tmp/")
 
 
-cs = Measure("DbVdr", FLDS_VDR)
+cs = Measure("TblVdr", FLDS_VDR)
 handleExports(cs)
 write_file_cpp(cs, "tmp/")
