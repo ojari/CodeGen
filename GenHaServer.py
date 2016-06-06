@@ -35,6 +35,7 @@ STR = "std::string&"
 class Measure(OClass):
     def __init__(self, name, fields):
         OClass.__init__(self, name, {PUBLIC})
+        self.implements = ["Query"]
 
         self.dbargs = []
         for fld, dtype in fields:
@@ -45,6 +46,7 @@ class Measure(OClass):
         s = ", ".join([a.name+" "+a.dbtpe for a in self.dbargs])
         self.CREATE = "CREATE TABLE "+self.name+" ("+s+")"
         self.INSERT = "INSERT INTO " + self.name + " VALUES("
+        self.SELECT = "SELECT * FROM " + self.name + ";"
 
     @export(CCHAR)
     def SqlCreate(self, meth):
@@ -61,7 +63,18 @@ class Measure(OClass):
 
     @export(VOID)
     def SqlGet(self, meth):
-        pass
+        meth << "std::string query = " + q(self.SELECT) + ";"
+
+    @export(VOID)
+    def HandleRow(self, meth):
+        index = 0
+        for v in self.dbargs:
+            if v.dbtpe == "REAL":
+                fn = "sqlite3_column_double"
+            else:
+                fn = "sqlite3_column_int"
+            meth << v.name + " = "+fn+"(_statement, "+str(index)+");"
+            index += 1
 
     @export(STR)
     def JsonGet(self, meth):

@@ -95,12 +95,17 @@ class OBlock(object):
         self.parent << "}"
 
 class OFile(object):
-    def __init__(self, fname):
+    def __init__(self, fname, namespace=""):
         print("generating "+fname+"...")
         self.fname = fname
         self.f = open(fname, "wt")
         self.indent = 0
         self.includes = []
+        self.namespace = namespace
+
+        if len(namespace) > 0:
+            self << "namespace " + namespace
+            self << "{"
 
         global LANGUAGE
         if fname.endswith(".java"):
@@ -136,6 +141,8 @@ class OFile(object):
         self.f.write("\n")
 
     def close(self):
+        if len(self.namespace) > 0:
+            self << "}"
         self.f.close()
 
 
@@ -284,6 +291,41 @@ class OMethod(OBase):
         return self
 
 
+class OEnum(OBase):
+    def __init__(self, name, mods={PUBLIC}, items=[]):
+        OBase.__init__(self, name, name, mods)
+        self.items = items
+
+    def add(self, item):
+        self.items.append(item)
+
+    def genCS(self, f):
+        with f.block(self.getMods() + "enum " + self.name):
+            for i in self.items:
+                f << i + ","
+
+
+class OProperty(OBase):
+    def __init__(self, name, ctype, mods={PUBLIC}):
+        OBase.__init__(self, name, ctype, mods)
+
+        if self.name.startswith("_"):
+            self.name = self.name[1:]
+            self.name = self.name.capitalize()
+
+        self.getter = []
+        self.setter = []
+
+    def genCS(self, f):
+        with f.block(self.getMods() + self.ctype +" " + self.name):
+            with f.block("get"):
+                for i in self.getter:
+                    f << i
+            with f.block("set"):
+                for i in self.setter:
+                    f << i
+
+
 class OClass(OBase):
     def __init__(self, name, mods={PUBLIC}):
         OBase.__init__(self, name, name, mods)
@@ -314,6 +356,13 @@ class OClass(OBase):
         if len(self.implements)>0:
             post = " implements "
             post += ", ".join(self.implements)
+
+        for i in self.members:
+            if i.isGetter():
+                p = OProperty(i.name, i.ctype)
+                p.getter = ["return "+i.name+";"]
+                p.setter = [i.name + " = value;"]
+                self << p
 
         with f.block(self.getMods() + "class " + self.name + post):
             for m in self.members:
@@ -384,8 +433,9 @@ def write_file(c, path):
     c.genC(f)
     f.close()
 
-def write_file_cs(c: OClass, fname: str):
-    f = OFile(fname)
+def write_file_cs(lst, fname: str, namespace: str):
+    f = OFile(fname, namespace)
+    for c in lst:
     c.genCS(f)
     f.close()
 
