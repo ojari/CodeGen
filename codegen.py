@@ -103,10 +103,6 @@ class OFile(object):
         self.includes = []
         self.namespace = namespace
 
-        if len(namespace) > 0:
-            self << "namespace " + namespace
-            self << "{"
-
         global LANGUAGE
         if fname.endswith(".java"):
             LANGUAGE = LANG_JAVA
@@ -139,6 +135,11 @@ class OFile(object):
             else:
                 self.f.write("#include <"+inc+">\n")
         self.f.write("\n")
+
+        if len(self.namespace) > 0 and LANGUAGE == LANG_CS:
+            self << "namespace " + self.namespace
+            self << "{"
+
 
     def close(self):
         if len(self.namespace) > 0:
@@ -181,6 +182,7 @@ class OBase(object):
         self.name = name
         self.ctype = ctype
         self.mods = mods
+        self.doc = ""
 
     def got(self, item):
         return item in self.mods
@@ -305,6 +307,11 @@ class OEnum(OBase):
                 f << i + ","
 
 
+def doBlock(f, name, items):
+    with f.block(name):
+        for i in items:
+            f << i
+
 class OProperty(OBase):
     def __init__(self, name, ctype, mods={PUBLIC}):
         OBase.__init__(self, name, ctype, mods)
@@ -318,12 +325,16 @@ class OProperty(OBase):
 
     def genCS(self, f):
         with f.block(self.getMods() + self.ctype +" " + self.name):
-            with f.block("get"):
-                for i in self.getter:
-                    f << i
-            with f.block("set"):
-                for i in self.setter:
-                    f << i
+            if self.isGetter():
+                if len(self.getter) == 1:
+                    f << "get { " + self.getter[0] + " }"
+                else:
+                    doBlock(f, "get", self.getter)
+            if self.isSetter():
+                if len(self.setter) == 1:
+                    f << "set { " + self.setter[0] + " }"
+                else:
+                    doBlock(f, "set", self.setter)
 
 
 class OClass(OBase):
@@ -349,19 +360,32 @@ class OClass(OBase):
                 self << m
 
     def genCS(self, f):
+        if len(self.doc) > 0:
+            f << "/// <summary>"
+            f << "/// " + self.doc
+            f << "/// </summary>"
         if TEST in self.mods:
             f << "[TestClass]"
 
         post = ""
-        if len(self.implements)>0:
-            post = " implements "
+        if len(self.implements) > 0:
+            if LANGUAGE == LANG_JAVA:
+            	post = " implements "
+            else:
+                post = " : "
             post += ", ".join(self.implements)
 
+
         for i in self.members:
-            if i.isGetter():
+            if isinstance(i, OArg) and (i.isGetter() or i.isSetter()):
                 p = OProperty(i.name, i.ctype)
-                p.getter = ["return "+i.name+";"]
-                p.setter = [i.name + " = value;"]
+                p.mods = i.mods
+                p.mods.remove(PRIVATE)
+                p.mods.add(PUBLIC)
+                if i.isGetter():
+                	p.getter = ["return "+i.name+";"]
+                if i.isSetter():
+                	p.setter = [i.name + " = value;"]
                 self << p
 
         with f.block(self.getMods() + "class " + self.name + post):
@@ -433,10 +457,12 @@ def write_file(c, path):
     c.genC(f)
     f.close()
 
-def write_file_cs(lst, fname: str, namespace: str):
+def write_file_cs(lst, fname: str, namespace: str, includes=[]):
     f = OFile(fname, namespace)
+    f.includes = includes
+    f.addIncludes()
     for c in lst:
-    c.genCS(f)
+    	c.genCS(f)
     f.close()
 
 def write_file_cpp(c, path):
