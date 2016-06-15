@@ -206,6 +206,16 @@ class OBase(object):
         
         return " ".join(visible.intersection(self.mods)) + " "
 
+    def generate(self, f):
+        if LANGAUGE == LANG_CPP:
+            self.genCPP(f)
+        elif LANGUAGE in [LANG_JAVA, LANG_CS]:
+            self.genCS(f)
+        elif LANGAUGE == LANG_C:
+            self.genC(f)
+
+    def define(self):
+        return self.ctype + " " + self.name
 
 class OArg(OBase):
     def __init__(self, name, ctype, mods={PRIVATE}, initial=None):
@@ -213,19 +223,16 @@ class OArg(OBase):
         self.initial = initial
 
     def genC(self, f):
-        f.h << self.ctype + " " + self.name + ";"
+        f.h << self.define() + ";"
 
     def genCPP(self, f):
-        f.h << self.ctype + " " + self.name + ";"
+        f.h << self.define() + ";"
 
     def genCS(self, f):
         post = ""
         if self.initial:
             post = " = " + self.initial
-        f << self.getMods() + self.ctype + " " + self.name + post + ";"
-
-    def argDef(self):
-        return self.ctype + " " + self.name
+        f << self.getMods() + self.define() + post + ";"
 
 
 class OMacro(OBase):
@@ -259,12 +266,12 @@ class OMethod(OBase):
             f << "[TestMethod]"
         if self.isOverride():
             f << "@Override"
-        with f.block(self.getMods() + self.ctype + " " + self.name + self.arg()):
+        with f.block(self.getMods() + self.define() + self.arg()):
             for code in self.code:
                 f << code
 
     def genCPP(self, f):
-        f.h << self.getMods() + self.ctype + " " + self.name + self.arg() + ";"
+        f.h << self.getMods() + self.define() + self.arg() + ";"
 
         with f.c.block(self.ctype + " " + self.parent.name + "::" + self.name + self.arg()):
             for code in self.code:
@@ -324,7 +331,7 @@ class OProperty(OBase):
         self.setter = []
 
     def genCS(self, f):
-        with f.block(self.getMods() + self.ctype +" " + self.name):
+        with f.block(self.getMods() + self.define()):
             if self.isGetter():
                 if len(self.getter) == 1:
                     f << "get { " + self.getter[0] + " }"
@@ -462,7 +469,7 @@ def write_file_cs(lst, fname: str, namespace: str, includes=[]):
     f.includes = includes
     f.addIncludes()
     for c in lst:
-    	c.genCS(f)
+    	c.generate(f)
     f.close()
 
 def write_file_cpp(c, path):
