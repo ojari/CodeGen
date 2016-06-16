@@ -1,7 +1,7 @@
 #
 # Copyright 2014 Jari Ojanen
 #
-from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE
+from codegen import OClass, OMethod, OStruct, OMacro, OArg, PRIVATE
 from codegen import processExports, getInstance, write_file, write_file_n
 from parseOrg import ParseOrg
 from config import Spi, Port
@@ -91,7 +91,7 @@ for i in [1, 2]:
     if len(pdir) > 0:
         c.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 
-write_file_n("config", PATH, c, spi)
+write_file_n(PATH+"config", c, spi)
 exit(0)
 
 #write_file(sc, PATH)
