@@ -2,9 +2,10 @@
 # Copyright 2014 Jari Ojanen
 #
 from codegen import OClass, OMethod, OStruct, OMacro, OArg, PRIVATE
-from codegen import processExports, getInstance, write_file, write_file_n
+from codegen import write_file, write_file_n
 from parseOrg import ParseOrg
 from config import Spi, Port
+import codegen as gen
 
 PATH = "../msp430/"
 #PATH = "tmp/"
@@ -52,9 +53,12 @@ def gen_class(cname, attribs, methods):
 p = ParseOrg("launchpad.org")
 #sc = OClass("port_sim")
 
-processExports()
-c = getInstance("port")
-spi = getInstance("spi")
+
+c = Port()
+gen.handleExports(c)
+
+spi = Spi()
+gen.handleExports(spi)
 
 for i in [1, 2]:
     pdir = []
@@ -92,32 +96,19 @@ for i in [1, 2]:
         c.m << pname+"DIR = " + (" + ".join(pdir)) + ";"
 
 write_file_n(PATH+"config", c, spi)
-exit(0)
-
 #write_file(sc, PATH)
 
-gen_class("fifo", 
-          [["bufPtr", "void*"],
-           ["bufSize", "size_t"],
-           ["recSize", "size_t"],
-           ["-pushPtr", "void*"],
-           ["-popPtr",  "void*"]],
-          [["init", [], "void"],
-           ["push", [OArg("data", "void*")], "void"],
-           ["pop",  [], "void*"]
-           ])
-
-
-# Generate some template classes
-#
-gen_class("ow", [["init", []],
+if 0:
+    # Generate some template classes
+    #
+    gen_class("ow", [["init", []],
                  ["reset", []],
                  ["read", []],
                  ["_readByte", [Byte('val')]],
                  ["_writeByte", [Byte('val')]],
                  ])
 
-gen_class("hd44", [["init", []],
+    gen_class("hd44", [["init", []],
                    ["clear", []],
                    ["goto", [Int("x"), Int("y")]],
                    ["print", [Int("ch")]],

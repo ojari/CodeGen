@@ -1,10 +1,12 @@
 #
 # Copyright 2014-5 Jari Ojanen
 #
-from codegen import OClass, OMethod, OCFile, OStruct, OMacro, OArg, PRIVATE, OSwitch
-from codegen import processExports, getInstance, write_file_n
+from codegen import OClass, OMethod, OStruct, OMacro, OArg, PRIVATE, OSwitch
+from codegen import write_file_n
 from parseOrg import ParseOrg
 from config import Spi, Port
+import codegen as gen
+
 
 PATH = "../stm32/"
 #PATH = "tmp/"
@@ -51,10 +53,12 @@ def gen_class(cname, attribs, methods):
 #
 p = ParseOrg("stm32.org")
 
-processExports()
 
-c = getInstance("port")
-spi = getInstance("spi")
+c = Port()
+gen.handleExports(c)
+
+spi = Spi()
+gen.handleExports(spi)
 
 c.m << "GPIO_InitTypeDef ioInit;"
 
@@ -137,4 +141,4 @@ for direction, desc, port, bit in pins:
 
     pinId += 1
 
-write_file_n("config", PATH, c, spi)
+write_file_n(PATH+"config", c, spi)

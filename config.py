@@ -2,12 +2,11 @@
 # Copyright 2014-5 Jari Ojanen
 #
 from codegen import OClass, OMethod, OSwitch, OArg, OMacro, PUBLIC, REMEMBER
-from codegen import export, exportclass, CLASSES
+from codegen import export, CLASSES
 
 BYTE = "uint8_t"
 VOID = "void"
 
-@exportclass
 class Spi(OClass):
     def __init__(self):
         OClass.__init__(self, "spi")
@@ -22,16 +21,15 @@ class Spi(OClass):
         meth.mods = {PUBLIC,REMEMBER}
         meth.args = [OArg("val", BYTE)]
 
-    @export(VOID)
+    @export(BYTE)
     def rx(self, meth):
         meth.mods = {PUBLIC,REMEMBER}
         meth.args = [OArg("val", BYTE)]
 
 
-@exportclass
 class Port(OClass):
     def __init__(self):
-        OClass.__init__(self, "port")
+        OClass.__init__(self, "io")
         self.pin_id = 1
 
     @export(VOID)
@@ -75,22 +73,3 @@ class Port(OClass):
     def add_in(self, name, oper):
         self.sr.add("PIN_"+name, ["ret = " + oper + ";"])
        
-INSTANCES = []
-
-for c in CLASSES:
-    o = c()
-    m = [getattr(o,x) for x in dir(o) if "export" in dir(getattr(o,x))]
-
-    for fn in m:
-        meth = OMethod(fn.__name__, fn.rtype)
-        fn(meth)
-        o << meth
-    
-    INSTANCES.append(o)
-
-#write_file_n("test", "", INSTANCES)
-def getInstance(name):
-    for i in INSTANCES:
-        if i.name == name:
-            return i
-    return None
