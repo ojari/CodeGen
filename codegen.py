@@ -8,6 +8,7 @@ PRIVATE   = "private"
 PROTECTED = "protected"
 PUBLIC    = "public"
 STATIC    = "static"
+CONST     = "const"
 FINAL     = "final"
 TEST      = "test"
 GETTER    = "getter"
@@ -42,6 +43,7 @@ LANG_JS   = { 'name': "JAVASCRIPT",   # not yet supported
 
 from functools import wraps
 import os.path
+import logging
 
 CLASSES = []
 INSTANCES = []
@@ -80,8 +82,8 @@ def export(rtype):
     def func_wrap(func):
         func.export = 1
         func.rtype = rtype
-        #print(func.__name__)
-        #print(func)
+        #logging.debug(func.__name__)
+        #logging.debug(func)
         @wraps(func)
         def rfunc(*args, **kwargs):
             return func(*args, **kwargs)
@@ -142,7 +144,7 @@ class OBlock(object):
 
 class OFile(object):
     def __init__(self, fname, namespace=""):
-        print("generating "+fname+"...")
+        logging.info("generating "+fname+"...")
         self.fname = fname
         self.f = open(fname, "wt")
         self.indent = 0
@@ -161,7 +163,11 @@ class OFile(object):
             self << ""
 
     def block(self, pre):
-        self << pre
+        if isinstance(pre, list):
+            for i in pre:
+                self << pre
+        else:
+            self << pre
         return OBlock(self)
 
     def __lshift__(self, s):
@@ -230,11 +236,17 @@ class OBase(object):
         return DBVAR in self.mods
         
     def getMods(self):
-        visible = {FINAL, PRIVATE, PROTECTED, PUBLIC, STATIC}
+        visible = [FINAL, PRIVATE, PROTECTED, PUBLIC, STATIC, CONST, OVERRIDE]
         if isLang(LANG_CPP):
             visible = {STATIC}
         
-        return " ".join(visible.intersection(self.mods)) + " "
+        mods = []
+        for v in visible:
+            if v in self.mods:
+                mods.append(v)
+
+        #return " ".join(visible.intersection(self.mods)) + " "
+        return " ".join(mods) + " "
 
     def generate(self, f):
         if isLang(LANG_H):
@@ -252,12 +264,15 @@ class OBase(object):
         #func(f)
 
     def define(self):
+        if self.parent and self.parent.name == self.name:  # constructor
+            return self.name
         return self.ctype + " " + self.name
 
 class OArg(OBase):
     def __init__(self, name: str, ctype: str, mods={PRIVATE}, initial=None):
         OBase.__init__(self, name, ctype, mods)
         self.initial = initial
+        self.parent = None
 
     def genH(self, f):
         f << self.define() + ";"
@@ -296,6 +311,7 @@ class OMethod(OBase):
     def __init__(self, name, ctype, args=[], mods={PUBLIC}):
         OBase.__init__(self, name, ctype, mods)
         self.args = args
+        self.base = ""
         self.code = []
         self.parent = None
 
@@ -306,12 +322,14 @@ class OMethod(OBase):
         return "("+ (", ".join(alist)) + ")"
 
     def genCS(self, f):
-        f << ""
         if TEST in self.mods:
             f << "[TestMethod]"
-        if self.isOverride():
+        if isLang(LANG_JAVA) and self.isOverride():
             f << "@Override"
-        with f.block(self.getMods() + self.define() + self.arg()):
+        base = self.base
+        if len(base) > 0:
+            base = " : base("+base+")"
+        with f.block(self.getMods() + self.define() + self.arg() + base):
             for code in self.code:
                 f << code
 
@@ -453,8 +471,12 @@ class OClass(OBase):
                 	p.setter = [i.name + " = value;"]
                 self << p
 
+        first = True
         with f.block(self.getMods() + "class " + self.name + post):
             for m in self.members:
+                if not first and not isinstance(m, OArg):
+                    f << ""
+                first = False
                 m.genCS(f)
 
     def genHPP(self, f):
@@ -599,3 +621,6 @@ def SWITCH(cond, items):
 
 def CASE(cond, items):
     return ["case "+ cond + ":"] + items + ["break;"]
+
+def NEW(ctype, variable, args):
+    return ctype + " " + variable + " = new " + ctype + "(" + args + ")"
