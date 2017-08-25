@@ -1,63 +1,57 @@
+#+PATH: ../stm32
+
 * Ports
 
-|  A | AF | Description | Direction |
-|----+----+-------------+-----------|
-|  0 |    | BUTTON      | IN        |
-|  1 |    |             |           |
-|  2 |    |             |           |
-|  3 |    |             |           |
-|  4 |    |             |           |
-|  5 |  0 | SPI1 SCK    |           |
-|  6 |  0 | SPI1 MISO   |           |
-|  7 |  0 | SPI1 MOSI   |           |
-|  8 |    | IRIN        | IN        |
-|  9 |  1 | USART1_TX   |           |
-| 10 |  1 | USART1_RX   |           |
-| 11 |    | NEXA_OUT    | OUT       |
-| 12 |    | NEXA_IN     | IN        |
-| 13 |    | IROUT       | OUT       |
-| 14 |    | USART2_TX   |           |
-| 15 |    | USART2_RX   |           |
-
-
-|  B | AF | Description | Direction |
-|----+----+-------------+-----------|
-|  0 |    |             |           |
-|  1 |    |             |           |
-|  2 |    |             |           |
-|  3 |    | TEMP2       | IN/OUT    |
-|  4 |    | TEMP3       | IN/OUT    |
-|  5 |    | TEMP4       | IN/OUT    |
-|  6 |    | RFM12B_IRQ  | IN        |
-|  7 |    |             |           |
-|  8 |    |             |           |
-|  9 |    |             |           |
-| 10 |    |             |           |
-| 11 |    |             |           |
-| 12 |    |             |           |
-| 13 |  1 | SPI2 SCK    |           |
-| 14 |  1 | SPI2 MISO   |           |
-| 15 |  1 | SPI2 MOSI   |           |
-
-
-|  C | AF | Description | Direction |
-|----+----+-------------+-----------|
-|  0 |    | LCD_DATA1   | OUT       |
-|  1 |    | LCD_DATA2   | OUT       |
-|  2 |    | LCD_DATA3   | OUT       |
-|  3 |    | LCD_DATA4   | OUT       |
-|  4 |    |             |           |
-|  5 |    |             |           |
-|  6 |    |             |           |
-|  7 |    |             |           |
-|  8 |    | LED_BLUE    | OUT       |
-|  9 |    | LED_GREEN   | OUT       |
-| 10 |    | LCD_RS      | OUT       |
-| 11 |    | LCD_ENABLE  | OUT       |
-| 12 |    |             |           |
-| 13 |    | TEMP1       | IN/OUT    |
-| 14 |    | [xtal lse]  |           |
-| 15 |    | [xtal lse]  |           |
+| Pin | AF | Description | Direction |
+|-----+----+-------------+-----------|
+| A0  |    | BUTTON      | IN        |
+| A1  |    |             |           |
+| A2  |    |             |           |
+| A3  |    |             |           |
+| A4  |    |             |           |
+| A5  |  0 | SPI1 SCK    |           |
+| A6  |  0 | SPI1 MISO   |           |
+| A7  |  0 | SPI1 MOSI   |           |
+| A8  |    | IRIN        | IN        |
+| A9  |  1 | USART1_TX   |           |
+| A10 |  1 | USART1_RX   |           |
+| A11 |    | NEXA_OUT    | OUT       |
+| A12 |    | NEXA_IN     | IN        |
+| A13 |    | IROUT       | OUT       |
+| A14 |    | USART2_TX   |           |
+| A15 |    | USART2_RX   |           |
+| B0  |    |             |           |
+| B1  |    |             |           |
+| B2  |    |             |           |
+| B3  |    | TEMP2       | IN/OUT    |
+| B4  |    | TEMP3       | IN/OUT    |
+| B5  |    | TEMP4       | IN/OUT    |
+| B6  |    | RFM12B_IRQ  | IN        |
+| B7  |    |             |           |
+| B8  |    |             |           |
+| B9  |    |             |           |
+| B10 |    |             |           |
+| B11 |    |             |           |
+| B12 |    |             |           |
+| B13 |  1 | SPI2 SCK    |           |
+| B14 |  1 | SPI2 MISO   |           |
+| B15 |  1 | SPI2 MOSI   |           |
+| C0  |    | LCD_DATA1   | OUT       |
+| C1  |    | LCD_DATA2   | OUT       |
+| C2  |    | LCD_DATA3   | OUT       |
+| C3  |    | LCD_DATA4   | OUT       |
+| C4  |    |             |           |
+| C5  |    |             |           |
+| C6  |    |             |           |
+| C7  |    |             |           |
+| C8  |    | LED_BLUE    | OUT       |
+| C9  |    | LED_GREEN   | OUT       |
+| C10 |    | LCD_RS      | OUT       |
+| C11 |    | LCD_ENABLE  | OUT       |
+| C12 |    |             |           |
+| C13 |    | TEMP1       | IN/OUT    |
+| C14 |    | [xtal lse]  |           |
+| C15 |    | [xtal lse]  |           |
 
 
 * Buspirate

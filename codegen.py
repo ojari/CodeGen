@@ -292,9 +292,22 @@ class OArg(OBase):
                 f << line
         f << self.getMods() + self.define() + post + ";"
 
+class OEmptyLine(OBase):
+    def __init__(self):
+        OBase.__init__(self, None, None, {PUBLIC})
+
+    def genH(self, f):
+        if PUBLIC in self.mods:
+            f << ""
+    
+    def genC(self, f):
+        if not PUBLIC in self.mods:
+            f << ""
 
 class OMacro(OBase):
     def __init__(self, name, value):
+        if isinstance(name, list):
+            name = "_".join(name)
         OBase.__init__(self, name, "", {PUBLIC})
         self.value = value
 
@@ -343,6 +356,9 @@ class OMethod(OBase):
 
                 
     def _writeCMeth(self, f, funcname):
+        if self.doc:
+            f << "/** " + self.doc
+            f << " */"
         with f.block(self.ctype + " " + funcname +  self.arg()):
             if REMEMBER in self.mods:
                 f << "//{BEGIN:"+funcname+"}"

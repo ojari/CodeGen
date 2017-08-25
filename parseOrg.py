@@ -26,6 +26,7 @@ class ParseOrg:
     def __init__(self, fname):
         self.f = open(fname, "rt")
         self.items = []
+        self.vars = {}
 
     def parseTable(self, line):
         ret = []
@@ -56,6 +57,9 @@ class ParseOrg:
             elif line[0] == "*":
                 curHeader = self.parseHeader(line)
                 self.items.append( curHeader )
+            elif line[0:2] == "#+":
+                name, value = line[2:].split(":")
+                self.vars[name] = value.strip()
             else:
                 logging.debug("Invalid org item:" + line)
 
