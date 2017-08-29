@@ -1,3 +1,76 @@
+* Registers
+
+| Adr  | Mnemonic     |   |  Bit | Type Description                                    |
+|------+--------------+---+------+-----------------------------------------------------|
+| 8000 | CFG          |   |      | Config                                              |
+|      | xtal         | g |  3:0 | Load capacitance [8.5*(x/2.0) for x in range(0,16)] |
+|      | band         | g |  5:4 | Frequency {-,433,868,915}                           |
+|      | ef           | g |    6 | Enable fifo                                         |
+|      | el           |   |    7 | Enable internal data register                       |
+| 8200 | PWR          |   |      | Power                                               |
+|      | dc           | s |    0 | disable clock output                                |
+|      | ew           | s |    1 | enable wake-up timer                                |
+|      | eb           | s |    2 | enable low battery indicator                        |
+|      | ex           | s |    3 | enable crystal oscillator                           |
+|      | es           | s |    4 | enable synthesizer                                  |
+|      | et           | s |    5 | enable TX                                           |
+|      | ebb          | s |    6 | enable receiver baseband                            |
+|      | er           | s |    7 | enable RX                                           |
+| A000 | FREQ         |   |      | frequency                                           |
+|      | data         | s | 11:0 |                                                     |
+| C600 | DR           |   |      | Data Rate                                           |
+|      | r            | s |  6:0 |                                                     |
+|      | cs           | s |    7 |                                                     |
+| 9000 | RCC          |   |      |                                                     |
+|      | r            | s |  2:0 | {-103,-97,-91,-85,-79,-73,-,-}                      |
+|      | gain         | s |  4:3 | {0,-6,-14,-20}                                      |
+|      | i            | s |  6:5 | {-,400,340,270,200,134,67,-}                        |
+|      | d            | s |  9:8 | {fast,medium,slow,always}                           |
+|      | p16          | s |   10 | {interrupt,vdi}                                     |
+| C200 | DATAFILTER   |   |      |                                                     |
+|      | f            | s |  2:0 |                                                     |
+|      | s            | s |    4 | {digital,analog}                                    |
+|      | ml           | s |    6 | {slow,fast}                                         |
+|      | al           | s |    7 | {manual,auto}                                       |
+| CA00 | FIFOMODE     |   |      |                                                     |
+|      | dr           | s |    0 |                                                     |
+|      | ff           | s |    1 |                                                     |
+|      | al           | s |    2 |                                                     |
+|      | sp           | s |    3 |                                                     |
+|      | f            | s |  7:4 |                                                     |
+| CE00 | PATTERN      |   |      |                                                     |
+|      | data         | s |  7:0 |                                                     |
+| B000 | RECEIVE      | s |      |                                                     |
+| C400 | AFC          |   |      |                                                     |
+|      | en           | s |    0 |                                                     |
+|      | oe           | s |    1 |                                                     |
+|      | fi           | s |    2 |                                                     |
+|      | st           | s |    3 |                                                     |
+|      | rl           | s |  5:4 |                                                     |
+|      | a            | s |  7:6 |                                                     |
+| 9800 | TXCFG        |   |      |                                                     |
+|      | p            | s |  2:0 | {0,-2.5,-5,-7.5,-10,-12.5,-15,-17.5}                |
+|      | m            | s |  7:4 |                                                     |
+|      | mp           | s |    8 |                                                     |
+| CC00 | PLL          |   |      |                                                     |
+|      | bw0          |   |    0 |                                                     |
+|      | ddit         |   |    2 |                                                     |
+|      | dly          |   |    3 |                                                     |
+|      | ob           |   |  6:5 |                                                     |
+| B800 | TXCFG        |   |      |                                                     |
+|      | t            |   |  7:0 |                                                     |
+| E000 | WakeUpTimer  |   |      |                                                     |
+|      | m            | s |  7:0 |                                                     |
+|      | r            | s | 12:8 |                                                     |
+| c800 | LowDutyCycle |   |      |                                                     |
+|      | enable       | s |    0 |                                                     |
+|      | cycle        | s |  7:1 |                                                     |
+| c000 | LowBat       |   |      |                                                     |
+|      | voltage      | s |  3:0 | [2.25 + v*0.1 for v in range(0,8)]                  |
+|      | ClockDiv     | s |  7:5 | {1,1.25,1.66,2,2.5,3.33,5,10}                       |
+| 0000 | ReadStat     |   |      |                                                     |
+
+
 * CFG 0x8000
 
  - x:2 8.5,9.0,9.5,10.0,10.5,11.0,11.5,12.0,12.5,13.0,13.5,14.0,14.5,15.0,15.5,16.0
