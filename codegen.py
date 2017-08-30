@@ -16,6 +16,7 @@ SETTER    = "setter"
 OVERRIDE  = "override"
 DBVAR     = "db"
 REMEMBER  = "remember"  # between code generations
+EXTERNAL  = "external"
 
 # Possible values for LANGUAGE
 #
@@ -133,14 +134,17 @@ def flatten(l):
             yield el
 
 class OBlock(object):
-    def __init__(self, parent):
+    def __init__(self, parent, post=None):
         self.parent = parent
+        self.post = post
 
     def __enter__(self):
         self.parent << "{"
 
     def __exit__(self,a,b,c):
         self.parent << "}"
+        if self.post:
+            self.parent << self.post
 
 class OFile(object):
     def __init__(self, fname, namespace=""):
@@ -157,18 +161,19 @@ class OFile(object):
                 LANGUAGE = lang
             
         if isLang(LANG_H) or isLang(LANG_HPP): 
-            fbase = os.path.basename(fname)
+            fileWOpath = os.path.basename(fname)
+            fbase, fext = os.path.splitext(fileWOpath)
             self << "#ifndef _"+fbase.upper()+"_H"
             self << "#define _"+fbase.upper()+"_H"
             self << ""
 
-    def block(self, pre):
+    def block(self, pre, post=None):
         if isinstance(pre, list):
             for i in pre:
                 self << pre
         else:
             self << pre
-        return OBlock(self)
+        return OBlock(self, post)
 
     def __lshift__(self, s):
         if isinstance(s, OBase):
@@ -321,7 +326,7 @@ class OMacro(OBase):
 
 
 class OMethod(OBase):
-    def __init__(self, name, ctype, args=[], mods={PUBLIC}):
+    def __init__(self, name: str, ctype: str, args=[], mods={PUBLIC}):
         OBase.__init__(self, name, ctype, mods)
         self.args = args
         self.base = ""
@@ -374,6 +379,9 @@ class OMethod(OBase):
         self._writeCMeth(f, self.parent.name + "::" + self.name)
 
     def genC(self, f):
+        if EXTERNAL in self.mods:
+            return
+
         funcname = self.parent.name + "_" + self.name
 
         f << ""
@@ -393,16 +401,26 @@ class OMethod(OBase):
 class OEnum(OBase):
     def __init__(self, name: str, mods={PUBLIC}, items=[]):
         OBase.__init__(self, name, name, mods)
-        self.items = items
+        self.items = list(items) # make copy of list
 
-    def add(self, item):
+    def add(self, item: str):
         self.items.append(item)
 
-    def genCS(self, f):
+    def _writeC(self, f: OFile):
         with f.block(self.getMods() + "enum " + self.name):
             for i in self.items:
                 f << i + ","
 
+    def genCS(self, f: OFile):
+        self._writeC(f)
+    
+    def genH(self, f: OFile):
+        with f.block("typedef enum ", self.name+";"):
+            for i in self.items:
+                f << i + ","
+    
+    def genC(self, f: OFile):
+        pass
 
 def doBlock(f, name, items):
     with f.block(name):

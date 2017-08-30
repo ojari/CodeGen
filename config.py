@@ -31,6 +31,8 @@ class Port(OClass):
     def __init__(self):
         OClass.__init__(self, "io")
         self.pin_id = 1
+        self.ss = None
+        self.sc = None
 
     @export(VOID)
     def init(self, meth):
@@ -64,8 +66,10 @@ class Port(OClass):
         meth << "return ret;"
  
     def add(self, name, oper_set, oper_clear):
-        self.ss.add("PIN_"+name, [oper_set + ";"])
-        self.sc.add("PIN_"+name, [oper_clear + ";"])
+        if self.ss:
+            self.ss.add("PIN_"+name, [oper_set + ";"])
+        if self.sc:
+            self.sc.add("PIN_"+name, [oper_clear + ";"])
         self << OMacro("PIN_"+name, str(self.pin_id))
         self.pin_id += 1
 
