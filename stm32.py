@@ -22,7 +22,7 @@ class PinDef:
         return OMacro(func+"_"+self.desc, "GPIO"+self.port+"->"+reg+" GPIO_Pin_"+self.pin)
 
     def pin_name(self):
-        return "GPIO_Pin_" + self.pin
+        return "GPIO_PIN_" + self.pin
 
     def reg(self, reg):
         return "GPIO" + self.port + "->" + reg
@@ -78,32 +78,29 @@ for portName in ports:
 
     if pout:
         c.m << ""
-        c.m << "ioInit.GPIO_Pin = " + (" | ".join(pout)) + ";"
-        c.m << "ioInit.GPIO_Mode = GPIO_Mode_OUT;"
-        c.m << "ioInit.GPIO_OType = GPIO_OType_PP;"
-        c.m << "ioInit.GPIO_PuPd = GPIO_PuPd_NOPULL;"
-        c.m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
-        c.m << "GPIO_Init(GPIO"+pindef.port+", &ioInit);"
+        c.m << "ioInit.Pin = " + (" | ".join(pout)) + ";"
+        c.m << "ioInit.Mode = GPIO_MODE_OUTPUT_PP;"
+        c.m << "ioInit.Pull = GPIO_NOPULL;"
+        c.m << "ioInit.Speed = GPIO_SPEED_FREQ_MEDIUM;"
+        c.m << "HAL_GPIO_Init(GPIO"+pindef.port+", &ioInit);"
     if pin:
         c.m << ""
-        c.m << "ioInit.GPIO_Pin = " + (" | ".join(pin)) + ";"
-        c.m << "ioInit.GPIO_Mode = GPIO_Mode_IN;"
-        c.m << "ioInit.GPIO_OType = GPIO_OType_PP;"
-        c.m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN;"
-        c.m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
-        c.m << "GPIO_Init(GPIO"+pindef.port+", &ioInit);"
+        c.m << "ioInit.Pin = " + (" | ".join(pin)) + ";"
+        c.m << "ioInit.Mode = GPIO_MODE_INPUT;"
+        c.m << "ioInit.Pull = GPIO_PULLDOWN;"
+        c.m << "ioInit.Speed = GPIO_SPEED_FREQ_MEDIUM;"
+        c.m << "HAL_GPIO_Init(GPIO"+pindef.port+", &ioInit);"
     if paf:
-        afpins = ["GPIO_Pin_" + pd.pin for pd in paf]
+        afpins = [pd.pin_name() for pd in paf]
         c.m << ""
-        c.m << "ioInit.GPIO_Pin = " + (" | ".join(afpins)) + ";"
-        c.m << "ioInit.GPIO_Mode = GPIO_Mode_AF;"
-        #c.m << "ioInit.GPIO_OType = GPIO_OType_PP;"
-        #c.m << "ioInit.GPIO_PuPd = GPIO_PuPd_DOWN;"
-        c.m << "ioInit.GPIO_Speed = GPIO_Speed_10MHz;"
-        c.m << "GPIO_Init(GPIO"+paf[0].port+", &ioInit);"
+        c.m << "ioInit.Pin = " + (" | ".join(afpins)) + ";"
+        c.m << "ioInit.Mode = GPIO_MODE_AF_PP;"
+        c.m << "ioInit.Speed = GPIO_SPEED_FREQ_MEDIUM;"
+        c.m << "ioInit.Alternate = " + paf[0].af + ";"
+        c.m << "HAL_GPIO_Init(GPIO"+paf[0].port+", &ioInit);"
         c.m << ""
-        for pd in paf:
-            c.m << "GPIO_PinAFConfig(GPIO"+pd.port+", GPIO_PinSource"+pd.pin+", "+pd.af+");"
+#        for pd in paf:
+#            c.m << "GPIO_PinAFConfig(GPIO"+pd.port+", GPIO_PinSource"+pd.pin+", "+pd.af+");"
 
 pinId = 1
 for pd in pins:
@@ -125,4 +122,4 @@ for pd in pins:
 
     pinId += 1
 
-write_file_n(p.vars['PATH']+"/config", c, spi)
+write_file_n(p.vars['PATH']+"hal", c, spi)
