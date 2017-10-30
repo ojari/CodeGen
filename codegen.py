@@ -530,7 +530,17 @@ class OClass(OBase):
                 m.genCPP(f)
 
     def genH(self, f):
-        for m in self.members:
+        methods = [ m for m in self.members if isinstance(m, OMethod)]
+        attrs = [ m for m in self.members if isinstance(m, OArg)]
+        if len(attrs) > 0:
+            f << "typedef struct " + self.name
+            f << "{"
+            for a in attrs:
+                a.generate(f)
+            f << "}"
+            f << self.name + "_t;"
+
+        for m in methods:
             m.generate(f)
 
     def genC(self, f):
@@ -614,6 +624,15 @@ def write_file_cs(lst, fname: str, namespace: str, includes=[]):
     	c.generate(f)
     f.close()
 
+def write_file_c(c, path: str, cincludes, hincludes):
+    for ext,includes in [['.h', hincludes],
+                         ['.c', cincludes]]:
+        f = OFile(path+c.name+ext)
+        f.includes = includes
+        f.addIncludes()
+        c.generate(f)
+        f.close()
+
 def write_file_cpp(c, path: str):
     for ext in ['.hpp', '.cpp']:
         f = OFile(path+c.name+ext)
@@ -621,7 +640,7 @@ def write_file_cpp(c, path: str):
         f.close()
 
 def write_file_n(fname, *classes):
-    for ext in ['.h', '.c']:
+    for ext in ['.hpp', '.cpp']:
         f = OFile(fname+ext)
         if ext == '.c':
             fbase = os.path.basename(fname)
