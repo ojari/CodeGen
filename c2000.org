@@ -1,0 +1,30 @@
+#+PATH: /home/ti/workspace/test2/c2000
+
+* Ports
+
+| PIN | ALT | PURPOSE    |
+|-----+-----+------------|
+|   0 | OUT | LED1       |
+|   1 | OUT | LED2       |
+|   2 | OUT | LED3       |
+|   3 | OUT | LED4       |
+|   4 |     |            |
+|   5 | OUT | NRF_CSN    |
+|   6 | OUT | NRF_CE     |
+|   7 | IN  | NRF_IRQ    |
+|  12 | ALT | <SCITXDA>  |
+|  16 | ALT | <SPISIMOA> |
+|  17 | ALT | <SPISOMIA> |
+|  18 | ALT | <SPICLKA>  |
+|  19 |     |            |
+|  28 | ALT | <SCIRXDA>  |
+|  29 |     |            |
+|  32 |     |            |
+|  33 |     |            |
+|  34 |     |            |
+|  35 |     |            |
+|  36 |     |            |
+|  37 |     |            |
+|  38 |     |            |
+
+end
