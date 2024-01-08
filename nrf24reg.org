@@ -1,0 +1,115 @@
+* Registers
+
+| Adr | Mnemonic   |    |  Bit | Type Description                                                                                                                   |
+|-----+------------+----+------+------------------------------------------------------------------------------------------------------------------------------------|
+|  00 | CFG        | s  |      | Configuration Register                                                                                                             |
+|     | RX_DR      | s  |    6 | Mask interrupt caused by RX_DR (1: Interrupt not reflected, 0: Reflect RX_DR as active low interrupt )                             |
+|     | TX_DS      | s  |    5 | Mask interrupt caused by TX_DS (1: Interrupt not reflected, 0: Reflect TX_DS as active low interrupt )                             |
+|     | MAX_RT     | s  |    4 | Mask interrupt caused by MAX_RT (1: Interrupt not reflected, 0: Reflect MAX_RT as active low interrupt)                            |
+|     | EN_CRC     | s  |    3 | Enable CRC. Forced high if one of the bits in the EN_AA is high                                                                    |
+|     | CRC        |    |    2 | CRC encoding scheme {1BYTE,2BYTES}                                                                                                 |
+|     | POWER      | s  |    1 | power {DOWN,UP}                                                                                                                    |
+|     | MODE       | s  |    0 | RX/TX control {TX,RX}                                                                                                              |
+|  01 | AA         | s  |      | Auto Acknowledgment                                                                                                                |
+|     | PIPE5      |    |    5 | Enable auto acknowledgement data pipe 5                                                                                            |
+|     | PIPE4      |    |    4 | Enable auto acknowledgement data pipe 4                                                                                            |
+|     | PIPE3      |    |    3 | Enable auto acknowledgement data pipe 3                                                                                            |
+|     | PIPE2      |    |    2 | Enable auto acknowledgement data pipe 2                                                                                            |
+|     | PIPE1      |    |    1 | Enable auto acknowledgement data pipe 1                                                                                            |
+|     | PIPE0      |    |    0 | Enable auto acknowledgement data pipe 0                                                                                            |
+|  02 | RXADR      | s  |      | Enabled RX Addresses                                                                                                               |
+|     | PIPE5      |    |    5 | Enable data pipe 5.                                                                                                                |
+|     | PIPE4      |    |    4 | Enable data pipe 4.                                                                                                                |
+|     | PIPE3      |    |    3 | Enable data pipe 3.                                                                                                                |
+|     | PIPE2      |    |    2 | Enable data pipe 2.                                                                                                                |
+|     | PIPE1      |    |    1 | Enable data pipe 1.                                                                                                                |
+|     | PIPE0      |    |    0 | Enable data pipe 0.                                                                                                                |
+|  03 | AW         |    |      | Address Widths                                                                                                                     |
+|     | DATA       | s  |  1:0 | RX/TX Address field width {-,3BYTES,4BYTES,5BYTES}                                                                                 |
+|  04 | RETRANS    |    |      | Automatic Retransmission                                                                                                           |
+|     | DELAY      |    |  7:4 | Auto Retransmit Delay ["{0}us".format(250*(x+1)) for x in range(0,16)]                                                             |
+|     | COUNT      | s  |  3:0 | Auto Retransmit Count ["{0}".format(x) for x in range(0,16)]                                                                       |
+|  05 | CH         |    |      | RF Channel                                                                                                                         |
+|     | DATA       | gs |  6:0 | Sets the frequency channel nRF24L01 operates on                                                                                    |
+|  06 | RF         |    |      | RF Setup                                                                                                                           |
+|     | PLL_LOCK   |    |    4 | Force PLL lock signal. Only used in test                                                                                           |
+|     | DR         | s  |    3 | Air Data Rate {1Mbps,2Mbps}                                                                                                        |
+|     | PWR        | s  |  2:1 | Set RF output power in TX mode {-18dBm,-12dBm,-6dBm,0dBm}                                                                          |
+|     | LNA_HCURR  |    |    0 | Setup LNA gain                                                                                                                     |
+|  07 | STATUS     | gs |      | Status                                                                                                                             |
+|     | RX_DR      |    |    6 | Data Ready RX FIFO interrupt. Asserted when new data arrives RX FIFOb. Write 1 to clear bit.                                       |
+|     | TX_DS      |    |    5 | Data Sent TX FIFO interrupt. Asserted when packet transmitted on TX. Write 1 to clear bit.                                         |
+|     | MAX_RT     |    |    4 | Maximum number of TX retransmits interrupt Write 1 to clear bit.                                                                   |
+|     | RX_P_NO    |    |  3:1 | Data pipe number for the payload available for reading from RX_FIFO (000-101: Data Pipe Number, 110: Not Used, 111: RX FIFO Empty) |
+|     | TX_FULL    |    |    0 | TX FIFO full flag.                                                                                                                 |
+|  08 | OBSERVE_TX |    |      | Transmit observe                                                                                                                   |
+|     | PLOS_CNT   |    |  7:4 | Count lost packets. The counter is overflow protected to 15, and discontinues at max until reset.                                  |
+|     | ARC_CNT    |    |  3:0 | Count retransmitted packets. The counter is reset when transmission of a new packet starts.                                        |
+|  09 | CD         |    |      |                                                                                                                                    |
+|     | DATA       |    |    0 | R Carrier Detect.                                                                                                                  |
+|  0A | RX_ADR0    |    |      |                                                                                                                                    |
+|     | DATA       |    | 39:0 | Receive address data pipe 0. 5 Bytes maximum length. (LSByte is written first. Write the number of bytes defined by SETUP_AW)      |
+|  0B | RX_ADR1    |    |      |                                                                                                                                    |
+|     | DATA       |    | 39:0 | Receive address data pipe 1. 5 Bytes maximum length. (LSByte is written first. Write the number of bytes defined by SETUP_AW)      |
+|  0C | RX_ADR2    |    |      |                                                                                                                                    |
+|     | DATA       |    |  7:0 | Receive address data pipe 2. Only LSB. MSBytes is equal to RX_ADR_P1(39:8)                                                         |
+|  0D | RX_ADR3    |    |      |                                                                                                                                    |
+|     | DATA       |    |  7:0 | Receive address data pipe 3. Only LSB. MSBytes is equal to RX_ADR_P1(39:8)                                                         |
+|  0E | RX_ADR4    |    |      |                                                                                                                                    |
+|     | DATA       |    |  7:0 | Receive address data pipe 4. Only LSB. MSBytes is equal to RX_ADR_P1(39:8)                                                         |
+|  0F | RX_ADR5    |    |      |                                                                                                                                    |
+|     | DATA       |    |  7:0 | Receive address data pipe 5. Only LSB. MSBytes is equal to RX_ADR_P1(39:8)                                                         |
+|  10 | TX_ADR     |    |      |                                                                                                                                    |
+|     | DATA       |    | 39:0 | Transmit address.                                                                                                                  |
+|  11 | RX_LEN0    |    |      |                                                                                                                                    |
+|     | DATA       | s  |  5:0 | Number of bytes in RX payload in data pipe 0                                                                                       |
+|  12 | RX_LEN1    |    |      |                                                                                                                                    |
+|     | DATA       |    |  5:0 | Number of bytes in RX payload in data pipe 1                                                                                       |
+|  13 | RX_LEN2    |    |      |                                                                                                                                    |
+|     | DATA       |    |  5:0 | Number of bytes in RX payload in data pipe 2                                                                                       |
+|  14 | RX_LEN3    |    |      |                                                                                                                                    |
+|     | DATA       |    |  5:0 | Number of bytes in RX payload in data pipe 3                                                                                       |
+|  15 | RX_LEN4    |    |      |                                                                                                                                    |
+|     | DATA       |    |  5:0 | Number of bytes in RX payload in data pipe 4                                                                                       |
+|  16 | RX_LEN5    |    |      |                                                                                                                                    |
+|     | DATA       |    |  5:0 | Number of bytes in RX payload in data pipe 5                                                                                       |
+|  17 | FIFO       | g  |      | FIFO Status                                                                                                                        |
+|     | TX_REUSE   |    |    6 | Reuse last transmitted data packet if set high.                                                                                    |
+|     | TX_FULL    |    |    5 | TX FIFO full flag                                                                                                                  |
+|     | TX_EMPTY   |    |    4 | TX FIFO empty flag                                                                                                                 |
+|     | RX_FULL    |    |    1 | RX FIFO full flag                                                                                                                  |
+|     | RX_EMPTY   |    |    0 | RX FIFO empty flag                                                                                                                 |
+|  1C | DYNPD      |    |      | dynamic payload length                                                                                                             |
+|     | PIPE5      |    |    5 | Enable dyn. payload length data pipe 5.                                                                                            |
+|     | PIPE4      |    |    4 | Enable dyn. payload length data pipe 4.                                                                                            |
+|     | PIPE3      |    |    3 | Enable dyn. payload length data pipe 3.                                                                                            |
+|     | PIPE2      |    |    2 | Enable dyn. payload length data pipe 2.                                                                                            |
+|     | PIPE1      |    |    1 | Enable dyn. payload length data pipe 1.                                                                                            |
+|     | PIPE0      |    |    0 | Enable dyn. payload length data pipe 0.                                                                                            |
+|  1D | FEATURE    |    |      | Feature                                                                                                                            |
+|     | EN_DPL     |    |    2 | Enables Dynamic Payload Length                                                                                                     |
+|     | EN_ACK_PAY |    |    1 | Enables Payload with ACK                                                                                                           |
+|     | EN_DYN_ACK |    |    0 | Enables the W_TX_PAYLOAD_NOACK command                                                                                             |
+
+
+* Commands
+
+| Name               |     Word |   | DataBytes | Operation                                                                                                                |
+|--------------------+----------+---+-----------+--------------------------------------------------------------------------------------------------------------------------|
+| READ_REG           | 000AAAAA | 1 |       1-5 | Read command and status registers. AAAAA = 5 bit Register Map Address                                                    |
+| WRITE_REG          | 001AAAAA | 1 |       1-5 | Write command and status registers. AAAAA = 5 bit Register Map Address                                                   |
+| RX_PAYLOAD         | 01100001 | 3 |      1-32 | Read RX-payload: 1 - 32 bytes. A read operation always starts at byte 0.                                                 |
+| TX_PAYLOAD         | 10100000 | 3 |      1-32 | Write TX-payload: 1 - 32 bytes. A write operation always starts at byte 0 used in TX payload.                            |
+| FLUSH_TX           | 11100001 | 0 |         0 | Flush TX FIFO, used in TX mode                                                                                           |
+| FLUSH_RX           | 11100010 | 0 |         0 | Flush RX FIFO, used in RX mode                                                                                           |
+| REUSE_TX_PL        | 11100011 |   |         0 | Used for a PTX device                                                                                                    |
+| ACTIVATE           | 01010000 |   |         1 | This write command followed by data 0x73 activates the following features: R_RX_PL_WID W_ACK_PAYLOAD  W_TX_PAYLOAD_NOACK |
+| R_RX_PL_WID        | 01100000 |   |      Read | RX-payload width for the top R_RX_PAYLOAD in the RX FIFO.                                                                |
+| W_ACK_PAYLOAD      | 10101PPP |   |      1-32 | Write Payload to be transmitted together with ACK packet on PIPE PPP.                                                    |
+| W_TX_PAYLOAD_NOACK | 10110000 |   |      1-32 | Disables AUTOACK on this specific packet.                                                                                |
+| NOP                | 11111111 | 0 |         0 | No Operation.                                                                                                            |
+| TX_ADR             | 00110000 | 3 |      1-32 |                                                                                                                          |
+| RX_ADR0            | 00101010 | 3 |      1-32 |                                                                                                                          |
+
+
+end
