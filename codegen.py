@@ -333,6 +333,9 @@ class OMethod(OBase):
         self.code = []
         self.parent = None
 
+    def setCode(self, code):
+        self.code = [line.strip() for line in code.strip().split("\n")]
+
     def arg(self):
         if len(self.args) == 0 and (isLang(LANG_C) or isLang(LANG_H)):
             return "(void)"

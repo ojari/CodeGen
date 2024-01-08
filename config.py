@@ -1,11 +1,12 @@
 #
 # Copyright 2014-5 Jari Ojanen
 #
-from codegen import OClass, OMethod, OSwitch, OArg, OMacro, PUBLIC, REMEMBER
+from codegen import OClass, OMethod, OSwitch, OArg, OMacro, PUBLIC, REMEMBER, EXTERNAL
 from codegen import export, CLASSES
 
-BYTE = "uint8_t"
-VOID = "void"
+BYTE  = "uint8_t"
+INT32 = "uint32_t"
+VOID  = "void"
 
 class Spi(OClass):
     def __init__(self):
@@ -13,18 +14,18 @@ class Spi(OClass):
 
     @export(VOID)
     def init(self, meth):
-        meth.mods = {PUBLIC,REMEMBER}
+        meth.mods = {PUBLIC, REMEMBER, EXTERNAL}
         meth.args = []
 
-    @export(VOID)
+    @export(BYTE)
     def tx(self, meth):
-        meth.mods = {PUBLIC,REMEMBER}
+        meth.mods = {PUBLIC, REMEMBER, EXTERNAL}
         meth.args = [OArg("val", BYTE)]
 
-    @export(BYTE)
-    def rx(self, meth):
-        meth.mods = {PUBLIC,REMEMBER}
-        meth.args = [OArg("val", BYTE)]
+    @export(INT32)
+    def tx3(self, meth):
+        meth.mods = {PUBLIC, REMEMBER, EXTERNAL}
+        meth.args = [OArg("val", INT32)]
 
 
 class Port(OClass):
