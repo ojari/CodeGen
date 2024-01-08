@@ -1,0 +1,17 @@
+#+PATH: ../../mbed/blinky/stm32
+
+* Ports
+
+| Pin | AF | Description | Direction |
+|-----+----+-------------+-----------|
+| A5  |  0 | SPI1_SCLK   |           |
+| A6  |  0 | SPI1_MISO   |           |
+| A7  |  0 | SPI1_MOSI   |           |
+| B0  |    | LED1        | OUT       |
+| B7  |    | LED2        | OUT       |
+| B14 |    | LED3        | OUT       |
+| D14 |    | NRF_CE      | OUT       |
+| D15 |    | OUT2        | OUT       |
+| F12 |    | OUT3        | OUT       |
+
+end
