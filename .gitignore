@@ -1,3 +1,5 @@
-/codegen.pyc
 *~
 *.pyc
+build/
+dist/
+py2code.egg-info/
