@@ -2,21 +2,22 @@
 # Copyright 2014-6 Jari Ojanen
 #
 
-# Possible values for OBase.mods list
-#
-PRIVATE   = "private"
-PROTECTED = "protected"
-PUBLIC    = "public"
-STATIC    = "static"
-CONST     = "const"
-FINAL     = "final"
-TEST      = "test"
-GETTER    = "getter"
-SETTER    = "setter"
-OVERRIDE  = "override"
-DBVAR     = "db"
-REMEMBER  = "remember"  # between code generations
-EXTERNAL  = "external"
+from enum import Flag, auto
+
+class Mod(Flag):
+    PRIVATE   = auto()
+    PROTECTED = auto()
+    PUBLIC    = auto()
+    STATIC    = auto()
+    CONST     = auto()
+    FINAL     = auto()
+    TEST      = auto()
+    GETTER    = auto()
+    SETTER    = auto()
+    OVERRIDE  = auto()
+    DBVAR     = auto()
+    REMEMBER  = auto() # remember code between {BEGIN:func} ... {END:func}
+    EXTERNAL  = auto()
 
 # Possible values for LANGUAGE
 #
@@ -225,30 +226,30 @@ class OBase(object):
         self.doc = ""
         self.pre = []
 
-    def got(self, item):
+    def got(self, item: Mod):
         return item in self.mods
 
     def isGetter(self):
-        return GETTER in self.mods
+        return Mod.GETTER in self.mods
 
     def isSetter(self):
-        return SETTER in self.mods
+        return Mod.SETTER in self.mods
 
     def isOverride(self):
-        return OVERRIDE in self.mods
+        return Mod.OVERRIDE in self.mods
 
     def isDbVal(self):
-        return DBVAR in self.mods
+        return Mod.DBVAR in self.mods
         
     def getMods(self):
-        visible = [FINAL, PRIVATE, PROTECTED, PUBLIC, STATIC, CONST, OVERRIDE]
+        visible = [Mod.FINAL, Mod.PRIVATE, Mod.PROTECTED, Mod.PUBLIC, Mod.STATIC, Mod.CONST, Mod.OVERRIDE]
         if isLang(LANG_CPP):
-            visible = {STATIC}
+            visible = {Mod.STATIC}
         
         mods = []
         for v in visible:
             if v in self.mods:
-                mods.append(v)
+                mods.append(v.name.lower())
 
         #return " ".join(visible.intersection(self.mods)) + " "
         return " ".join(mods) + " "
@@ -276,7 +277,7 @@ class OBase(object):
 class OArg(OBase):
     def __init__(self, name: str, ctype: str, mods=None, initial=None):
         if mods is None:     # fix all instances using a same mutable set.
-            mods = {PRIVATE}
+            mods = {Mod.PRIVATE}
         OBase.__init__(self, name, ctype, mods)
         self.initial = initial
         self.parent = None
@@ -289,7 +290,7 @@ class OArg(OBase):
             f << "/** " + self.doc
             f << " */"
         pre = ""
-        if EXTERNAL in self.mods:
+        if self.got(Mod.EXTERNAL):
             pre = "extern "
         f << pre << self.define() + ";"
 
@@ -307,34 +308,34 @@ class OArg(OBase):
 
 class OEmptyLine(OBase):
     def __init__(self):
-        OBase.__init__(self, None, None, {PUBLIC})
+        OBase.__init__(self, None, None, {Mod.PUBLIC})
 
     def genH(self, f):
-        if PUBLIC in self.mods:
+        if self.got(Mod.PUBLIC):
             f << ""
     
     def genC(self, f):
-        if not PUBLIC in self.mods:
+        if not self.got(Mod.PUBLIC):
             f << ""
 
 class OMacro(OBase):
     def __init__(self, name, value):
         if isinstance(name, list):
             name = "_".join(name)
-        OBase.__init__(self, name, "", {PUBLIC})
+        OBase.__init__(self, name, "", {Mod.PUBLIC})
         self.value = value
 
     def genH(self, f):
-        if PUBLIC in self.mods:
+        if self.got(Mod.PUBLIC):
             f << "#define " + self.name + " " + self.value
     
     def genC(self, f):
-        if not PUBLIC in self.mods:
+        if not self.got(Mod.PUBLIC):
             f << "#define " + self.name + " " + self.value
 
 
 class OMethod(OBase):
-    def __init__(self, name: str, ctype: str, args=[], mods={PUBLIC}):
+    def __init__(self, name: str, ctype: str, args=[], mods={Mod.PUBLIC}):
         OBase.__init__(self, name, ctype, mods)
         self.args = args
         self.base = ""
@@ -351,7 +352,7 @@ class OMethod(OBase):
         return "("+ (", ".join(alist)) + ")"
 
     def genCS(self, f):
-        if TEST in self.mods:
+        if self.got(Mod.TEST):
             f << "[TestMethod]"
         if isLang(LANG_JAVA) and self.isOverride():
             f << "@Override"
@@ -366,7 +367,7 @@ class OMethod(OBase):
         funcname = self.name
         if self.parent is not None:
             funcname = self.parent.name + "_" + self.name
-        if PUBLIC in self.mods:
+        if self.got(Mod.PUBLIC):
             f << "extern " + self.ctype + " " + funcname + " " + self.arg() + ";"
     
     def genHPP(self, f):
@@ -378,21 +379,21 @@ class OMethod(OBase):
             f << "/** " + self.doc
             f << " */"
         with f.block(self.ctype + " " + funcname +  self.arg()):
-            if REMEMBER in self.mods:
+            if self.got(Mod.REMEMBER):
                 f << "//{BEGIN:"+funcname+"}"
             for code in self.code:
                 if isinstance(code, OBase):
                     code.generate(f)
                 else:
                     f << code
-            if REMEMBER in self.mods:
+            if self.got(Mod.REMEMBER):
                 f << "//{END:"+funcname+"}"
         
     def genCPP(self, f):
         self._writeCMeth(f, self.parent.name + "::" + self.name)
 
     def genC(self, f):
-        if EXTERNAL in self.mods:
+        if self.got(Mod.EXTERNAL):
             return
 
         funcname = self.name
@@ -414,7 +415,7 @@ class OMethod(OBase):
 
 
 class OEnum(OBase):
-    def __init__(self, name: str, mods={PUBLIC}, items=[]):
+    def __init__(self, name: str, mods={Mod.PUBLIC}, items=[]):
         OBase.__init__(self, name, name, mods)
         self.items = list(items) # make copy of list
 
@@ -443,7 +444,7 @@ def doBlock(f, name, items):
             f << i
 
 class OProperty(OBase):
-    def __init__(self, name: str, ctype, mods={PUBLIC}):
+    def __init__(self, name: str, ctype, mods={Mod.PUBLIC}):
         OBase.__init__(self, name, ctype, mods)
 
         if self.name.startswith("_"):
@@ -470,7 +471,7 @@ class OProperty(OBase):
 
 
 class OClass(OBase):
-    def __init__(self, name: str, mods={PUBLIC}):
+    def __init__(self, name: str, mods={Mod.PUBLIC}):
         OBase.__init__(self, name, name, mods)
         self.members = []
         self.implements = []
@@ -496,7 +497,7 @@ class OClass(OBase):
             f << "/// <summary>"
             f << "/// " + self.doc
             f << "/// </summary>"
-        if TEST in self.mods:
+        if self.got(Mod.TEST):
             f << "[TestClass]"
 
         post = ""
@@ -512,7 +513,7 @@ class OClass(OBase):
             if isinstance(i, OArg) and (i.isGetter() or i.isSetter()):
                 p = OProperty(i.name, i.ctype)
 
-                p.mods = {PUBLIC} | ( i.mods & {GETTER,SETTER} )   # | = union     & = intersection
+                p.mods = {Mod.PUBLIC} | ( i.mods & {Mod.GETTER, Mod.SETTER} )   # | = union     & = intersection
 
                 if i.isGetter():
                 	p.getter = ["return "+i.name+";"]
@@ -531,15 +532,15 @@ class OClass(OBase):
     def genHPP(self, f):
         self.makeGetsSets()
         with f.block(self.getMods() + "class " + self.name):
-            for prot in [PUBLIC, PROTECTED, PRIVATE]:
+            for prot in [Mod.PUBLIC, Mod.PROTECTED, Mod.PRIVATE]:
                 items = [x for x in self.members if x.got(prot)]
-                f << prot + ":"
+                f << prot.name.lower() + ":"
                 for m in items:
                     m.genHPP(f)
         f << ";"
     
     def genCPP(self, f):
-        for prot in [PUBLIC, PROTECTED, PRIVATE]:
+        for prot in [Mod.PUBLIC, Mod.PROTECTED, Mod.PRIVATE]:
             items = [x for x in self.members if x.got(prot)]
             for m in items:
                 m.genCPP(f)
@@ -567,7 +568,7 @@ class OClass(OBase):
 
 
 class OStruct(OBase):
-    def __init__(self, name: str, mods={PUBLIC}):
+    def __init__(self, name: str, mods={Mod.PUBLIC}):
         OBase.__init__(self, name, name, mods)
         self.members = []
 
@@ -587,7 +588,7 @@ class OStruct(OBase):
 
 
 class OSwitch(OBase):
-    def __init__(self, name: str, mods={PUBLIC}):
+    def __init__(self, name: str, mods={Mod.PUBLIC}):
         OBase.__init__(self, name, "", mods)
         self.members = []
 
@@ -618,7 +619,7 @@ class OSwitch(OBase):
         
 class OTestClass(OClass):
     def __init__(self, name: str):
-        OClass.__init__(self, name, mods={PUBLIC,TEST})
+        OClass.__init__(self, name, mods={Mod.PUBLIC, Mod.TEST})
 
 
 #-------------------------------------------------------------------------------
