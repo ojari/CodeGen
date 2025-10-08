@@ -274,16 +274,24 @@ class OBase(object):
         return self.ctype + " " + self.name
 
 class OArg(OBase):
-    def __init__(self, name: str, ctype: str, mods={PRIVATE}, initial=None):
+    def __init__(self, name: str, ctype: str, mods=None, initial=None):
+        if mods is None:     # fix all instances using a same mutable set.
+            mods = {PRIVATE}
         OBase.__init__(self, name, ctype, mods)
         self.initial = initial
         self.parent = None
 
     def genH(self, f):
-        f << self.define() + ";"
+        f << "extern " + self.define() + ";"
         
     def genC(self, f):
-        pass
+        if self.doc:
+            f << "/** " + self.doc
+            f << " */"
+        pre = ""
+        if EXTERNAL in self.mods:
+            pre = "extern "
+        f << pre << self.define() + ";"
 
     def genCPP(self, f):
         pass
@@ -355,7 +363,9 @@ class OMethod(OBase):
                 f << code
 
     def genH(self, f):
-        funcname = self.parent.name + "_" + self.name
+        funcname = self.name
+        if self.parent is not None:
+            funcname = self.parent.name + "_" + self.name
         if PUBLIC in self.mods:
             f << "extern " + self.ctype + " " + funcname + " " + self.arg() + ";"
     
@@ -385,7 +395,9 @@ class OMethod(OBase):
         if EXTERNAL in self.mods:
             return
 
-        funcname = self.parent.name + "_" + self.name
+        funcname = self.name
+        if self.parent is not None:
+            funcname = self.parent.name + "_" + self.name
 
         f << ""
         self._writeCMeth(f, funcname)
@@ -668,6 +680,9 @@ def IF(cond, items):
 
 def ELSE(items):
     return block("else", items)
+
+def ELSEIF(cond, items):
+    return block("else if (" + cond + ")", items)
 
 def FOREACH(cond, items):
     return block("foreach (" + cond + ")", items)
