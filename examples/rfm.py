@@ -4,6 +4,7 @@ import sys
 
 FNAME = sys.argv[1]
 MODULE = FNAME[:-4].upper()
+PATH = = "out"
 
 print("generating "+MODULE+"...")
 #exit(0)

@@ -1,13 +1,14 @@
 #
 # Copyright 2017 Jari Ojanen
 #
-from codegen import OClass, OMethod, OStruct, OMacro, OArg, OSwitch
-from codegen import write_file_n
-from parseOrg import ParseOrg
+from py2code.codegen import OClass, OMethod, OStruct, OMacro, OArg, OSwitch
+from py2code.codegen import write_file_n, handleExports
+from py2code.parseOrg import ParserOrg
+from py2code.generator import CGenerator, HGenerator
 from config import Spi, Port
-import codegen as gen
 
-FILENAME = "c2000.org"
+FILENAME = "examples/c2000.org"
+PATH="out"
 
 class PinDef:
     def __init__(self, row):
@@ -38,22 +39,19 @@ class PinDef:
     
 # Read STM32 pin configuration from text file and generate macros to access output pins.
 #
-p = ParseOrg(FILENAME)
+p = ParserOrg(FILENAME)
 
 c = Port()
-m = OMethod("init", "void")
-c.init(m)
-c << m
-#gen.handleExports(c)
+handleExports(c)
 
 spi = Spi()
-gen.handleExports(spi)
+handleExports(spi)
 
 c.m << "EALLOW;"
 
 p.parse()
 table = p.items[0].items[0]
-table2 = [PinDef(x) for x in table[1:] if len(x[2]) > 0 and x[2][0] != "<"]
+table2 = [PinDef(x) for x in table.rows[1:] if len(x[2]) > 0 and x[2][0] != "<"]
 
 pins = []
 for pindef in table2:
@@ -80,4 +78,6 @@ for pindef in table2:
 
 c.m << "EDIS;"
 
-write_file_n(p.vars['PATH']+"_hal", c, spi)
+data = [[f"{PATH}/c2k_hal.h", HGenerator()],
+        [f"{PATH}/c2k_hal.c", CGenerator()]] 
+write_file_n(data, c.members, spi)

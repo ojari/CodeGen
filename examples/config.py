@@ -1,8 +1,8 @@
 #
 # Copyright 2014-5 Jari Ojanen
 #
-from codegen import OClass, OMethod, OSwitch, OArg, OMacro, PUBLIC, REMEMBER, EXTERNAL
-from codegen import export, CLASSES
+from py2code.codegen import OClass, OMethod, OSwitch, OArg, OMacro, Mod
+from py2code.codegen import export, CLASSES
 
 BYTE  = "uint8_t"
 INT32 = "uint32_t"
@@ -14,17 +14,17 @@ class Spi(OClass):
 
     @export(VOID)
     def init(self, meth):
-        meth.mods = {PUBLIC, REMEMBER, EXTERNAL}
+        meth.mods = {Mod.PUBLIC, Mod.REMEMBER, Mod.EXTERNAL}
         meth.args = []
 
     @export(BYTE)
     def tx(self, meth):
-        meth.mods = {PUBLIC, REMEMBER, EXTERNAL}
+        meth.mods = {Mod.PUBLIC, Mod.REMEMBER, Mod.EXTERNAL}
         meth.args = [OArg("val", BYTE)]
 
     @export(INT32)
     def tx3(self, meth):
-        meth.mods = {PUBLIC, REMEMBER, EXTERNAL}
+        meth.mods = {Mod.PUBLIC, Mod.REMEMBER, Mod.EXTERNAL}
         meth.args = [OArg("val", INT32)]
 
 

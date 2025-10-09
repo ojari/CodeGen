@@ -1,8 +1,11 @@
 #
 # Copyright 2014-6 Jari Ojanen
 #
-
 from enum import Flag, auto
+from functools import wraps
+import os.path
+import logging
+
 
 class Mod(Flag):
     PRIVATE   = auto()
@@ -19,53 +22,12 @@ class Mod(Flag):
     REMEMBER  = auto() # remember code between {BEGIN:func} ... {END:func}
     EXTERNAL  = auto()
 
-# Possible values for LANGUAGE
-#
-LANG_C    = { 'name': "C",
-              'ext': ".c",
-              'func': "GenC" }
-LANG_H    = { 'name': "H",
-              'ext': ".h",
-              'func': "GenH" }
-LANG_CPP  = { 'name': "C++",
-              'ext': ".cpp",
-              'func': "GenCPP" }
-LANG_HPP  = { 'name': "H++",
-              'ext': ".hpp",
-              'func': "GenHPP" }
-LANG_CS   = { 'name': "C#",
-              'ext': ".cs",
-              'func': "GenCS" }
-LANG_JAVA = { 'name': "JAVA",
-              'ext': ".java",
-              'func': "GenCS" }
-LANG_JS   = { 'name': "JAVASCRIPT",   # not yet supported
-              'ext': ".js",
-              'func': "GenCS" }
-
-from functools import wraps
-import os.path
-import logging
-
 CLASSES = []
 INSTANCES = []
-LANGUAGE = LANG_C
-LANGUAGES = [LANG_C, LANG_H, LANG_CPP, LANG_HPP, LANG_CS, LANG_JAVA]
-
 NEWLINE = "\n"
-
-def isLang(lang):
-    global LANGUAGE
-
-    return LANGUAGE['name'] == lang['name']
 
 def q(s: str):
     return "\""+s+"\""
-
-
-#def p(l):
-#    a = ",".join(l)
-#    return "("+a+")"
 
 def c(*items):
     lst = []
@@ -148,7 +110,7 @@ class OBlock(object):
             self.parent << self.post
 
 class OFile(object):
-    def __init__(self, fname, namespace=""):
+    def __init__(self, fname, generator, namespace=""):
         logging.info("generating "+fname+"...")
         self.fname = fname
         self.f = open(fname, "wt")
@@ -156,17 +118,8 @@ class OFile(object):
         self.includes = []
         self.namespace = namespace
 
-        global LANGUAGE
-        for lang in LANGUAGES:
-            if fname.endswith(lang['ext']):
-                LANGUAGE = lang
-            
-        if isLang(LANG_H) or isLang(LANG_HPP): 
-            fileWOpath = os.path.basename(fname)
-            fbase, fext = os.path.splitext(fileWOpath)
-            self << "#ifndef _"+fbase.upper()+"_H"
-            self << "#define _"+fbase.upper()+"_H"
-            self << ""
+        self.generator = generator
+        self.generator.open(os.path.basename(fname), self)
 
     def block(self, pre, post=None):
         if isinstance(pre, list):
@@ -178,7 +131,7 @@ class OFile(object):
 
     def __lshift__(self, s):
         if isinstance(s, OBase):
-            s.generate(self)
+            s.accept(self.generator, self)
             return self
 
         if s in ["}", "};"]:
@@ -191,30 +144,20 @@ class OFile(object):
             self.indent -= 1
         return self
 
-    def addIncludes(self):
+    def addIncludes(self, visitor):
         for inc in self.includes:
-            if isLang(LANG_CS):
-                self << "using " + inc + ";"
-            elif isLang(LANG_JAVA):
-                self << "import " + inc + ";"
-            else:
-                if inc.startswith("<"):
-                    self << "#include " + inc
-                else:
-                    self << "#include " + q(inc)
+            visitor.addInclude(inc, self)
         self << ""
 
-        if len(self.namespace) > 0 and isLang(LANG_CS):
-            self << "namespace " + self.namespace
-            self << "{"
+        #if len(self.namespace) > 0 and isLang(LANG_CS):
+        #    self << "namespace " + self.namespace
+        #    self << "{"
 
 
     def close(self):
         if len(self.namespace) > 0:
             self << "}"
-        if isLang(LANG_H) or isLang(LANG_HPP):
-            self <<  ""
-            self << "#endif"
+        self.generator.close(self)
         self.f.close()
 
 
@@ -243,8 +186,8 @@ class OBase(object):
         
     def getMods(self):
         visible = [Mod.FINAL, Mod.PRIVATE, Mod.PROTECTED, Mod.PUBLIC, Mod.STATIC, Mod.CONST, Mod.OVERRIDE]
-        if isLang(LANG_CPP):
-            visible = {Mod.STATIC}
+        ###if isLang(LANG_CPP):
+        ###    visible = {Mod.STATIC}
         
         mods = []
         for v in visible:
@@ -254,20 +197,8 @@ class OBase(object):
         #return " ".join(visible.intersection(self.mods)) + " "
         return " ".join(mods) + " "
 
-    def generate(self, f):
-        if isLang(LANG_H):
-            self.genH(f)
-        elif isLang(LANG_C):
-            self.genC(f)
-        elif isLang(LANG_HPP):
-            self.genHPP(f)
-        elif isLang(LANG_CPP):
-            self.genCPP(f)
-        elif isLang(LANG_CS):
-            self.genCS(f)
-
-        #func = getattr(self.__clss__, LANGUAGE['func'])
-        #func(f)
+    def accept(self, visitor, f):
+        visitor.visit(self, f)
 
     def define(self):
         if self.parent and self.parent.name == self.name:  # constructor
@@ -282,9 +213,6 @@ class OArg(OBase):
         self.initial = initial
         self.parent = None
 
-    def genH(self, f):
-        f << "extern " + self.define() + ";"
-        
     def genC(self, f):
         if self.doc:
             f << "/** " + self.doc
@@ -325,14 +253,6 @@ class OMacro(OBase):
         OBase.__init__(self, name, "", {Mod.PUBLIC})
         self.value = value
 
-    def genH(self, f):
-        if self.got(Mod.PUBLIC):
-            f << "#define " + self.name + " " + self.value
-    
-    def genC(self, f):
-        if not self.got(Mod.PUBLIC):
-            f << "#define " + self.name + " " + self.value
-
 
 class OMethod(OBase):
     def __init__(self, name: str, ctype: str, args=[], mods={Mod.PUBLIC}):
@@ -346,62 +266,17 @@ class OMethod(OBase):
         self.code = [line.strip() for line in code.strip().split("\n")]
 
     def arg(self):
-        if len(self.args) == 0 and (isLang(LANG_C) or isLang(LANG_H)):
-            return "(void)"
         alist = [ a.define() for a in self.args]
         return "("+ (", ".join(alist)) + ")"
 
-    def genCS(self, f):
-        if self.got(Mod.TEST):
-            f << "[TestMethod]"
-        if isLang(LANG_JAVA) and self.isOverride():
-            f << "@Override"
-        base = self.base
-        if len(base) > 0:
-            base = " : base("+base+")"
-        with f.block(self.getMods() + self.define() + self.arg() + base):
-            for code in self.code:
-                f << code
+    def getCppDefine(self):
+        return self.getMods() + self.define() + self.arg()
 
-    def genH(self, f):
+    def getCFuncName(self) -> str:
         funcname = self.name
         if self.parent is not None:
             funcname = self.parent.name + "_" + self.name
-        if self.got(Mod.PUBLIC):
-            f << "extern " + self.ctype + " " + funcname + " " + self.arg() + ";"
-    
-    def genHPP(self, f):
-        f << self.getMods() + self.define() + self.arg() + ";"
-
-                
-    def _writeCMeth(self, f, funcname):
-        if self.doc:
-            f << "/** " + self.doc
-            f << " */"
-        with f.block(self.ctype + " " + funcname +  self.arg()):
-            if self.got(Mod.REMEMBER):
-                f << "//{BEGIN:"+funcname+"}"
-            for code in self.code:
-                if isinstance(code, OBase):
-                    code.generate(f)
-                else:
-                    f << code
-            if self.got(Mod.REMEMBER):
-                f << "//{END:"+funcname+"}"
-        
-    def genCPP(self, f):
-        self._writeCMeth(f, self.parent.name + "::" + self.name)
-
-    def genC(self, f):
-        if self.got(Mod.EXTERNAL):
-            return
-
-        funcname = self.name
-        if self.parent is not None:
-            funcname = self.parent.name + "_" + self.name
-
-        f << ""
-        self._writeCMeth(f, funcname)
+        return funcname
 
     def __lshift__(self, s):
         if isinstance(s, str):
@@ -502,32 +377,30 @@ class OClass(OBase):
 
         post = ""
         if len(self.implements) > 0:
-            if isLang(LANG_JAVA):
-            	post = " implements "
-            else:
-                post = " : "
+            # if isLang(LANG_JAVA):
+            # 	post = " implements "
+            # else:
+            post = " : "
             post += ", ".join(self.implements)
 
 
         for i in self.members:
             if isinstance(i, OArg) and (i.isGetter() or i.isSetter()):
                 p = OProperty(i.name, i.ctype)
-
-                p.mods = {Mod.PUBLIC} | ( i.mods & {Mod.GETTER, Mod.SETTER} )   # | = union     & = intersection
-
+                p.mods = {Mod.PUBLIC} | (i.mods & {Mod.GETTER, Mod.SETTER})
                 if i.isGetter():
-                	p.getter = ["return "+i.name+";"]
+                    p.getter = ["return " + i.name + ";"]
                 if i.isSetter():
-                	p.setter = [i.name + " = value;"]
-                self << p
+                    p.setter = [i.name + " = value;"]
+                node.members.append(p) # This might be risky, modifying during iteration. Let's add it to a new list.
 
-        first = True
         with f.block(self.getMods() + "class " + self.name + post):
+            first = True
             for m in self.members:
                 if not first and not isinstance(m, OArg):
                     f << ""
                 first = False
-                m.genCS(f)
+                self.visit(m, f)
 
     def genHPP(self, f):
         self.makeGetsSets()
@@ -536,14 +409,14 @@ class OClass(OBase):
                 items = [x for x in self.members if x.got(prot)]
                 f << prot.name.lower() + ":"
                 for m in items:
-                    m.genHPP(f)
+                    self.visit(m, f)
         f << ";"
     
     def genCPP(self, f):
         for prot in [Mod.PUBLIC, Mod.PROTECTED, Mod.PRIVATE]:
             items = [x for x in self.members if x.got(prot)]
             for m in items:
-                m.genCPP(f)
+                self.visit(m, f)
 
     def genH(self, f):
         methods = [ m for m in self.members if isinstance(m, OMethod)]
@@ -577,14 +450,11 @@ class OStruct(OBase):
         self.members.append(m)
         return self
 
-    def genH(self, f):
+    def gen(self, f):
         with f.block("typedef struct"):
             for m in self.members:
                 m.generate(f)
         f << self.name + "_t;"
-        
-    def genC(self, f):
-        pass
 
 
 class OSwitch(OBase):
@@ -596,26 +466,6 @@ class OSwitch(OBase):
         self.members.append([cond,code])
         return self
 
-    def _write(self, f):
-        with f.block("switch (" + self.name + ")"):
-            for cond, code in self.members:
-                f << "case " + cond + ":"
-                for line in code:
-                    f << line
-                f << "break;"
-
-    def genH(self, f):
-        pass
-
-    def genC(self, f):
-        self._write(f)
-
-    def genCS(self, f):
-        self._write(f)
-
-    def genCPP(self, f):
-        self._write(f)
-
         
 class OTestClass(OClass):
     def __init__(self, name: str):
@@ -623,51 +473,30 @@ class OTestClass(OClass):
 
 
 #-------------------------------------------------------------------------------
-def write_file(c, path):
-    for ext in ['.h', '.c']:
-        f = OFile(path+c.name+ext)
-        if ext == '.c':
-            f.includes = ['hw.h']
-            f.addIncludes()
-        c.generate(f)
-        f.close()
-
-def write_file_cs(lst, fname: str, namespace: str, includes=[]):
-    f = OFile(fname, namespace)
+def write_file(c, filename: str, generator, includes=[]):
+    f = OFile(filename, generator)
     f.includes = includes
-    f.addIncludes()
-    for c in lst:
-    	c.generate(f)
+    f.addIncludes(generator) 
+    if isinstance(c, list):
+        for ci in c:
+            f << ci
+    else:
+        f << c
     f.close()
 
-def write_file_c(c, path: str, cincludes, hincludes):
-    for ext,includes in [['.h', hincludes],
-                         ['.c', cincludes]]:
-        f = OFile(path+c.name+ext)
-        f.includes = includes
-        f.addIncludes()
-        c.generate(f)
-        f.close()
-
-def write_file_cpp(c, path: str):
-    for ext in ['.hpp', '.cpp']:
-        f = OFile(path+c.name+ext)
-        c.genCPP(f)
-        f.close()
-
-def write_file_n(fname, *classes):
-    for ext in ['.hpp', '.cpp']:
-        f = OFile(fname+ext)
-        if ext == '.c':
+def write_file_n(data, *classes):
+    for fname, gen in data:
+        f = OFile(fname, gen)
+        if fname.endswith('.c'):
             fbase = os.path.basename(fname)
             f.includes = ['hw.h', fbase+".h"]
-            f.addIncludes()
+            f.addIncludes(gen)
         for c in classes:
             if isinstance(c, list):
                 for ci in c:
-                    ci.generate(f)
+                    f << ci
             else:
-                c.generate(f)
+                f << c
         f.close()
 
 #

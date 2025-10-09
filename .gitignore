@@ -3,3 +3,4 @@
 build/
 dist/
 py2code.egg-info/
+out/

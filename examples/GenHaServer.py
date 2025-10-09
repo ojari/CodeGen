@@ -1,6 +1,7 @@
-from gen import JDbAttr
-from codegen import OClass, q, OArg, write_file_cpp, PUBLIC, STATIC
-from codegen import exportclass, export, getInstance, processExports, handleExports
+#from gen import JDbAttr
+from py2code.codegen import OClass, q, OArg, write_file, Mod
+from py2code.codegen import exportclass, export, getInstance, processExports, handleExports
+from py2code.generator import CPPGenerator, HPPGenerator
 
 FLDS_SERVER = [["Time",  "INTEGER PRIMARY KEY"],
                ["Temp1", "REAL"],
@@ -28,13 +29,26 @@ FLDS_VDR = [["Channel", "TEXT"],
             ["Desc",    "TEXT"]
            ]
 
+
+class JDbAttr(OArg):
+    def __init__(self, name, dbtpe):
+        ctype = "int"
+        if dbtpe == "REAL":
+            ctype = "double"
+        elif dbtpe == "TEXT":
+            ctype = "std::string"
+        else:
+            ctype = "int"
+        OArg.__init__(self, name, ctype)
+        self.dbtpe = dbtpe
+
 VOID = "void"
 CCHAR = "const char*"
 STR = "std::string&"
 
 class Measure(OClass):
     def __init__(self, name, fields):
-        OClass.__init__(self, name, {PUBLIC})
+        OClass.__init__(self, name, {Mod.PUBLIC})
         self.implements = ["Query"]
 
         self.dbargs = []
@@ -43,7 +57,7 @@ class Measure(OClass):
             self << dbArg
             self.dbargs.append(dbArg)
 
-        s = ", ".join([a.name+" "+a.dbtpe for a in self.dbargs])
+        s = ", ".join([a.name+" "+a.ctype for a in self.dbargs])
         self.CREATE = "CREATE TABLE "+self.name+" ("+s+")"
         self.INSERT = "INSERT INTO " + self.name + " VALUES("
         self.SELECT = "SELECT * FROM " + self.name + ";"
@@ -101,19 +115,23 @@ class Measure(OClass):
 #-----------------------------------------------------------------------
 ct = Measure("TblMeasure", FLDS_SERVER)
 handleExports(ct)
-write_file_cpp(ct, "tmp/")
+write_file(ct, "out/db_meas.cpp",  CPPGenerator(), ["db_meas.h"])
+write_file(ct, "out/db_meas.h",    HPPGenerator())
 
 
 cs = Measure("TblWeather", FLDS_WEATHER)
 handleExports(cs)
-write_file_cpp(cs, "tmp/")
+write_file(cs, "out/db_weather.cpp",  CPPGenerator(), ["db_weather.h"])
+write_file(cs, "out/db_weather.h",    HPPGenerator())
 
 
 cs = Measure("TblStock", FLDS_STOCK)
 handleExports(cs)
-write_file_cpp(cs, "tmp/")
+write_file(cs, "out/db_stock.cpp",  CPPGenerator(), ["db_stock.h"])
+write_file(cs, "out/db_stock.h",    HPPGenerator())
 
 
 cs = Measure("TblVdr", FLDS_VDR)
 handleExports(cs)
-write_file_cpp(cs, "tmp/")
+write_file(cs, "out/db_vdr.cpp",  CPPGenerator(), ["db_vdr.h"])
+write_file(cs, "out/db_vdr.h",    HPPGenerator())

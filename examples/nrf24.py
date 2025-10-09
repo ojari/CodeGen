@@ -1,8 +1,10 @@
-from parseOrg import ParseOrg
-import codegen as gen
+from py2code.parseOrg import ParserOrg
+import py2code.codegen as gen
+from py2code.generator import CGenerator, HGenerator
 import re
 
-FILENAME = "c:/home/mbed/blinky/nrf24reg.org"
+FILENAME = "examples/nrf24reg.org"
+PATH = "out"
 MODULE = "NRF24"
 
 def maskByte(val):
@@ -141,14 +143,14 @@ def GenGetRegister(reg, bit):
 def GenWriteReg():
     m = gen.OMethod("writeReg", "void", 
                     [gen.OArg("reg", "uint8_t"), gen.OArg("val", "uint8_t")],
-                    {gen.PUBLIC, gen.EXTERNAL})
+                    {gen.Mod.PUBLIC, gen.Mod.EXTERNAL})
     m.doc = "Set nRF register value"
     return m
 
 def GenReadReg():
     m = gen.OMethod("readReg", "uint8_t", 
                     [gen.OArg("reg", "uint8_t")],
-                    {gen.PUBLIC, gen.EXTERNAL})
+                    {gen.Mod.PUBLIC, gen.Mod.EXTERNAL})
     m.doc = "Get nRF register value"
     m.setCode("""
     int val = 0x00;
@@ -174,7 +176,7 @@ def GenCmd(cmd):
 def GenCommand0():
     m = gen.OMethod("command0", "uint8_t", 
                     [gen.OArg("cmd", "uint8_t")],
-                    {gen.PUBLIC, gen.EXTERNAL})
+                    {gen.Mod.PUBLIC, gen.Mod.EXTERNAL})
     m.doc = "Send command with zero arguments."
     return m
 
@@ -185,18 +187,18 @@ def GenCommand3():
                      gen.OArg("arg1", "uint8_t"),
                      gen.OArg("arg2", "uint8_t"),
                      gen.OArg("arg3", "uint8_t")],
-                    {gen.PUBLIC, gen.EXTERNAL})
+                    {gen.Mod.PUBLIC, gen.Mod.EXTERNAL})
     m.doc = "Send command with three arguments."
     return m
 
-p = ParseOrg(FILENAME)
+p = ParserOrg(FILENAME)
 p.parse()
 
 # Parse table to Register and Row classes
 #
 registers = []
 reg = None
-for rowLine in p.items[0].items[0][1:]:
+for rowLine in p.items[0].items[0].rows[1:]:
     if rowLine[0]:
         if reg:
             registers.append(reg)
@@ -205,7 +207,7 @@ for rowLine in p.items[0].items[0][1:]:
         reg.add(rowLine)
 
 commands = []
-for cmdLine in p.items[1].items[0][1:]:
+for cmdLine in p.items[1].items[0].rows[1:]:
     cmd = Command(cmdLine)
     if cmd.action:
         commands.append(cmd)
@@ -265,5 +267,7 @@ nrf << GenReadReg()
 nrf << GenCommand0()
 nrf << GenCommand3()
 
-gen.write_file_n("c:/home/ti/workspace/Example_Spi/nrf24", nrf)
+data = [[f"{PATH}/nrf24.h", HGenerator()],
+        [f"{PATH}/nrf24.c", CGenerator()]] 
+gen.write_file_n(data, nrf)
 print("Done.")

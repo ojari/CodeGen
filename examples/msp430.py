@@ -1,14 +1,14 @@
 #
 # Copyright 2014 Jari Ojanen
 #
-from codegen import OClass, OMethod, OStruct, OMacro, OArg, PRIVATE, OEmptyLine
-from codegen import write_file, write_file_n
-from parseOrg import ParseOrg
+from py2code.codegen import OClass, OMethod, OStruct, OMacro, OArg, Mod, OEmptyLine
+from py2code.codegen import write_file, write_file_n, handleExports
+from py2code.parseOrg import ParserOrg
+from py2code.generator import CGenerator, HGenerator
 from config import Spi, Port
-import codegen as gen
 
-PATH = "../msp430/"
-#PATH = "tmp/"
+#PATH = "../msp430"
+PATH = "out"
 
 class Int(OArg):
     def __init__(self, name):
@@ -43,7 +43,7 @@ def gen_class(cname, attribs, methods):
             for cl in ccode:
                 m << cl
         if mname.startswith("_"):
-            m = OMethod(mname[1:], "void", args, mods={PRIVATE})
+            m = OMethod(mname[1:], "void", args, mods={Mod.PRIVATE})
         c << m
     write_file(c, PATH)
 
@@ -78,17 +78,17 @@ class PinDef:
 
 # Read MSP430 pin configuration from text file and generate macros to access output pins.
 #
-org = ParseOrg("launchpad.org")
+org = ParserOrg("examples/launchpad.org")
 org.parse()
 
 c = Port()
-gen.handleExports(c)
+handleExports(c)
 
 spi = Spi()
-gen.handleExports(spi)
+handleExports(spi)
 
 table = org.items[0].items[0]
-tablePins = [PinDef(x) for x in table[1:] if len(x[2]) > 0]
+tablePins = [PinDef(x) for x in table.rows[1:] if len(x[2]) > 0]
 
 c << OEmptyLine()
 for pin in tablePins:
@@ -124,7 +124,9 @@ if 1:
         items = [pin.bit_name() for pin in tablePins if pin.port == port and ("OUT" in pin.direction)]
         c.m << "P"+port+"DIR = " + ("|".join(items)) + ";"
 
-write_file_n(PATH+"config", c, spi)
+data = [[f"{PATH}/config.h", HGenerator()],
+        [f"{PATH}/config.c", CGenerator()]] 
+write_file_n(data, c.members, spi)
 
 if 0:
     # Generate some template classes

@@ -1,14 +1,15 @@
 #
 # Copyright 2014-5 Jari Ojanen
 #
-from codegen import OClass, OMethod, OStruct, OMacro, OArg, OSwitch
-from codegen import write_file_n
-from parseOrg import ParseOrg
+from py2code.codegen import OClass, OMethod, OStruct, OMacro, OArg, OSwitch
+from py2code.codegen import write_file_n, handleExports
+from py2code.generator import CGenerator, HGenerator
+from py2code.parseOrg import ParserOrg
 from config import Spi, Port
-import codegen as gen
 
 #FILENAME = "stm32.org"
-FILENAME = "nucleom7.org"
+FILENAME = "examples/nucleom7.org"
+PATH = "out"
 
 class PinDef:
     def __init__(self, row):
@@ -29,20 +30,20 @@ class PinDef:
 
 # Read STM32 pin configuration from text file and generate macros to access output pins.
 #
-p = ParseOrg(FILENAME)
+p = ParserOrg(FILENAME)
 
 
 c = Port()
-gen.handleExports(c)
+handleExports(c)
 
 spi = Spi()
-gen.handleExports(spi)
+handleExports(spi)
 
 c.m << "GPIO_InitTypeDef ioInit;"
 
 p.parse()
 table = p.items[0].items[0]
-table2 = [PinDef(x) for x in table[1:] if len(x[2]) > 0 and x[2][0] != "["]
+table2 = [PinDef(x) for x in table.rows[1:] if len(x[2]) > 0 and x[2][0] != "["]
 
 ports = list(set([pin.port for pin in table2]))  # all unique ports in the pins
 ports.sort()
@@ -122,4 +123,7 @@ for pd in pins:
 
     pinId += 1
 
-write_file_n(p.vars['PATH']+"hal", c, spi)
+data = [[f"{PATH}/stm_hal.h", HGenerator()],
+        [f"{PATH}/stm_hal.c", CGenerator()]] 
+
+write_file_n(data, c, spi)
