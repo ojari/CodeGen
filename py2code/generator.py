@@ -177,7 +177,7 @@ class CGenerator(CodeGenerator):
             f << "/** " + node.doc
             f << " */"
         pre = ""
-        if Mod.EXTERNAL in node.mods:
+        if node.got(Mod.EXTERNAL):
             pre = "extern "
         f << pre + node.define() + ";"
 

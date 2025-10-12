@@ -213,27 +213,6 @@ class OArg(OBase):
         self.initial = initial
         self.parent = None
 
-    def genC(self, f):
-        if self.doc:
-            f << "/** " + self.doc
-            f << " */"
-        pre = ""
-        if self.got(Mod.EXTERNAL):
-            pre = "extern "
-        f << pre << self.define() + ";"
-
-    def genCPP(self, f):
-        pass
-
-    def genCS(self, f):
-        post = ""
-        if self.initial:
-            post = " = " + self.initial
-        if len(self.pre) > 0:
-            for line in self.pre:
-                f << line
-        f << self.getMods() + self.define() + post + ";"
-
 class OEmptyLine(OBase):
     def __init__(self):
         OBase.__init__(self, None, None, {Mod.PUBLIC})
@@ -252,7 +231,6 @@ class OMacro(OBase):
             name = "_".join(name)
         OBase.__init__(self, name, "", {Mod.PUBLIC})
         self.value = value
-
 
 class OMethod(OBase):
     def __init__(self, name: str, ctype: str, args=[], mods={Mod.PUBLIC}):
@@ -401,43 +379,6 @@ class OClass(OBase):
                     f << ""
                 first = False
                 self.visit(m, f)
-
-    def genHPP(self, f):
-        self.makeGetsSets()
-        with f.block(self.getMods() + "class " + self.name):
-            for prot in [Mod.PUBLIC, Mod.PROTECTED, Mod.PRIVATE]:
-                items = [x for x in self.members if x.got(prot)]
-                f << prot.name.lower() + ":"
-                for m in items:
-                    self.visit(m, f)
-        f << ";"
-    
-    def genCPP(self, f):
-        for prot in [Mod.PUBLIC, Mod.PROTECTED, Mod.PRIVATE]:
-            items = [x for x in self.members if x.got(prot)]
-            for m in items:
-                self.visit(m, f)
-
-    def genH(self, f):
-        methods = [ m for m in self.members if isinstance(m, OMethod)]
-        attrs = [ m for m in self.members if isinstance(m, OArg)]
-        if len(attrs) > 0:
-            f << "typedef struct " + self.name
-            f << "{"
-            for a in attrs:
-                a.generate(f)
-            f << "}"
-            f << self.name + "_t;"
-
-        for m in methods:
-            m.generate(f)
-
-    def genC(self, f):
-        for m in self.members:
-            m.generate(f)
-
-    def genPY(self, f):
-        pass
 
 
 class OStruct(OBase):
