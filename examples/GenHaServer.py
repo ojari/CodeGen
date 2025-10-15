@@ -48,7 +48,7 @@ STR = "std::string&"
 
 class Measure(OClass):
     def __init__(self, name, fields):
-        OClass.__init__(self, name, {Mod.PUBLIC})
+        OClass.__init__(self, "Tbl"+name, {Mod.PUBLIC})
         self.implements = ["Query"]
 
         self.dbargs = []
@@ -61,6 +61,8 @@ class Measure(OClass):
         self.CREATE = "CREATE TABLE "+self.name+" ("+s+")"
         self.INSERT = "INSERT INTO " + self.name + " VALUES("
         self.SELECT = "SELECT * FROM " + self.name + ";"
+
+        handleExports(self)
 
     @export(CCHAR)
     def SqlCreate(self, meth):
@@ -112,26 +114,23 @@ class Measure(OClass):
         for v in self.dbargs:
             meth << v.name + " = doc[" + q(v.name) + "];"
 
+    def write(self):
+        cname = self.name[3:].lower()
+        write_file(self, f"{PATH}_{cname}.cpp",  CPPGenerator(), [f"db_{cname}.h"])
+        write_file(self, f"{PATH}_{cname}.h",    HPPGenerator())
+
 #-----------------------------------------------------------------------
-ct = Measure("TblMeasure", FLDS_SERVER)
-handleExports(ct)
-write_file(ct, "out/db_meas.cpp",  CPPGenerator(), ["db_meas.h"])
-write_file(ct, "out/db_meas.h",    HPPGenerator())
+PATH = "out/db"
 
+ct = Measure("Measure", FLDS_SERVER)
+ct.write()
 
-cs = Measure("TblWeather", FLDS_WEATHER)
-handleExports(cs)
-write_file(cs, "out/db_weather.cpp",  CPPGenerator(), ["db_weather.h"])
-write_file(cs, "out/db_weather.h",    HPPGenerator())
+cs = Measure("Weather", FLDS_WEATHER)
+cs.write()
 
+cs = Measure("Stock", FLDS_STOCK)
+cs.write()
 
-cs = Measure("TblStock", FLDS_STOCK)
-handleExports(cs)
-write_file(cs, "out/db_stock.cpp",  CPPGenerator(), ["db_stock.h"])
-write_file(cs, "out/db_stock.h",    HPPGenerator())
+cs = Measure("Vdr", FLDS_VDR)
+cs.write()
 
-
-cs = Measure("TblVdr", FLDS_VDR)
-handleExports(cs)
-write_file(cs, "out/db_vdr.cpp",  CPPGenerator(), ["db_vdr.h"])
-write_file(cs, "out/db_vdr.h",    HPPGenerator())
