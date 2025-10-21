@@ -137,7 +137,11 @@ class OFile(object):
         if s in ["}", "};"]:
             self.indent -= 1
         #print ("\t"*self.indent) + self.line
-        self.f.write(("    "*self.indent) + s + NEWLINE)
+        if s in ['public:', 'protected:', 'private:']:
+            self.f.write(s + NEWLINE)
+        else:
+            self.f.write(("    "*self.indent) + s + NEWLINE)
+
         if s == "{" or s.startswith("case "):
             self.indent += 1
         if s == "break;":
@@ -184,8 +188,7 @@ class OBase(object):
     def isDbVal(self):
         return Mod.DBVAR in self.mods
         
-    def getMods(self):
-        visible = [Mod.FINAL, Mod.PRIVATE, Mod.PROTECTED, Mod.PUBLIC, Mod.STATIC, Mod.CONST, Mod.OVERRIDE]
+    def getMods(self, visible=[Mod.FINAL, Mod.PRIVATE, Mod.PROTECTED, Mod.PUBLIC, Mod.STATIC, Mod.CONST, Mod.OVERRIDE]):
         ###if isLang(LANG_CPP):
         ###    visible = {Mod.STATIC}
         
@@ -247,8 +250,8 @@ class OMethod(OBase):
         alist = [ a.define() for a in self.args]
         return "("+ (", ".join(alist)) + ")"
 
-    def getCppDefine(self):
-        return self.getMods() + self.define() + self.arg()
+    def getCppDefine(self, visible=None):
+        return self.getMods(visible) + self.define() + self.arg()
 
     def getCFuncName(self) -> str:
         funcname = self.name

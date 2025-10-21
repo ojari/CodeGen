@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="py2code",
-    version="0.2.0",
+    version="0.2.1",
     description="A Python package for generating source code in C, C++, C#, and Java from python code.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

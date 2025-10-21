@@ -5,14 +5,13 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{be33b4cc-4c96-4e8f-99d8-a9f5a2e73d21}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>parseOrg.py</StartupFile>
+    <StartupFile>GenHaServer.py</StartupFile>
     <SearchPath>.</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
-    <InterpreterVersion>3.5</InterpreterVersion>
+    <InterpreterId>Global|PythonCore|3.10</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
@@ -20,10 +19,10 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <PropertyGroup>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
-    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="codegen.py" />
+    <Compile Include="py2code/codegen.py" />
+    <Compile Include="py2code/generator.py" />
     <Compile Include="config.py" />
     <Compile Include="gen.py" />
     <Compile Include="GenHaServer.py" />
@@ -35,8 +34,10 @@
     <Compile Include="stm32.py" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\3.5" />
+    <InterpreterReference Include="Global|PythonCore|3.10" />
   </ItemGroup>
-  <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
+  <ItemGroup>
+    <Folder Include="py2code\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

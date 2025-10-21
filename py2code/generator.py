@@ -284,14 +284,14 @@ class CPPGenerator(CodeGenerator):
 
 class HPPGenerator(HeaderGenerator):
     def visit_omethod(self, node, f):
-        f << node.getCppDefine() + ";"
+        f << node.getCppDefine([Mod.FINAL, Mod.STATIC, Mod.CONST, Mod.OVERRIDE]) + ";"
 
     def visit_oarg(self, node, f):
         f << node.define() + ";"
 
     def visit_oclass(self, node, f):
         node.makeGetsSets()
-        with f.block(node.getMods() + "class " + node.name):
+        with f.block(node.getMods([Mod.STATIC]) + "class " + node.name):
             for prot in [Mod.PUBLIC, Mod.PROTECTED, Mod.PRIVATE]:
                 items = [x for x in node.members if x.got(prot)]
                 f << prot.name.lower() + ":"

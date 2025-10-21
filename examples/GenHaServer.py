@@ -48,7 +48,7 @@ STR = "std::string&"
 
 class Measure(OClass):
     def __init__(self, name, fields):
-        OClass.__init__(self, name, {Mod.PUBLIC})
+        OClass.__init__(self, name, {})
         self.implements = ["Query"]
 
         self.dbargs = []
