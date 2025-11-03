@@ -1,6 +1,6 @@
 * Registers
 
-| Adr | Mnemonic   |    |  Bit | Type Description                                                                                                                   |
+| Adr | Mnemonic   | M  |  Bit | Description                                                                                                                   |
 |-----+------------+----+------+------------------------------------------------------------------------------------------------------------------------------------|
 |  00 | CFG        | s  |      | Configuration Register                                                                                                             |
 |     | RX_DR      | s  |    6 | Mask interrupt caused by RX_DR (1: Interrupt not reflected, 0: Reflect RX_DR as active low interrupt )                             |
@@ -91,10 +91,9 @@
 |     | EN_ACK_PAY |    |    1 | Enables Payload with ACK                                                                                                           |
 |     | EN_DYN_ACK |    |    0 | Enables the W_TX_PAYLOAD_NOACK command                                                                                             |
 
-
 * Commands
 
-| Name               |     Word |   | DataBytes | Operation                                                                                                                |
+| Name               |     Word | A  | DataBytes | Operation                                                                                                                |
 |--------------------+----------+---+-----------+--------------------------------------------------------------------------------------------------------------------------|
 | READ_REG           | 000AAAAA | 1 |       1-5 | Read command and status registers. AAAAA = 5 bit Register Map Address                                                    |
 | WRITE_REG          | 001AAAAA | 1 |       1-5 | Write command and status registers. AAAAA = 5 bit Register Map Address                                                   |

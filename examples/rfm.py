@@ -1,16 +1,13 @@
 import sys
+from org_analyze import ParserOrg, OrgHeader, OrgText
 
-#print(sys.argv[1])
-
-FNAME = sys.argv[1]
-MODULE = FNAME[:-4].upper()
-PATH = = "out"
+#FNAME = sys.argv[1]
+#MODULE = FNAME[:-4].upper()
+FNAME = "examples/rfm12b.org"
+MODULE = "RFM12B"
+PATH = "out"
 
 print("generating "+MODULE+"...")
-#exit(0)
-
-
-#MODULE="RFM12"
 
 def define(name, value):
     print("#define "+"_".join(name)+" "+value)
@@ -52,14 +49,14 @@ class Register:
                 print("   ",reg,bits,cbit,2**bits)
             cbit += bits
 
-f = open(FNAME)
+
 r = None
-for line in f.readlines():
-    if line.startswith("* "):
-        pos = line.find("#")  # remove comment
-        if pos > 0:
-            line = line[:pos].strip()
-        name,addr = line[2:].split(" ")
+org = ParserOrg(FNAME)
+items = org.parse()
+for i, item in enumerate(items[2:]):
+    if isinstance(item, OrgHeader):
+        #print(f"Header {i}: {item.name}")
+        name,addr = item.name.split(" ")
         if r != None:
             r.dump()
         if "-" in addr:  # is range
@@ -71,9 +68,9 @@ for line in f.readlines():
                 define([MODULE,name,str(i+1)], hex(a))
         else:            # is single value
             r = Register(name, addr.strip())
-        
-    elif line.startswith(" - "):
-        bs = line[3:].strip()
+    elif isinstance(item, OrgText):
+        # print(f"Text {i}: {item.line}")
+        bs = item.line[3:].strip()
         arg = ""
         cmt = bs.find("/")
         if cmt > 0:
@@ -85,9 +82,3 @@ for line in f.readlines():
         #print "B"+bs+"."
         reg,bits = bs.split(":")
         r.data.append([reg,int(bits),arg])
-        
-    elif len(line.strip()) == 0:
-        pass
-    
-    else:
-        print(" <"+line+">")

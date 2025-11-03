@@ -3,11 +3,10 @@
 #
 from py2code.codegen import OClass, OMethod, OStruct, OMacro, OArg, Mod, OEmptyLine
 from py2code.codegen import write_file, write_file_n, handleExports
-from py2code.parseOrg import ParserOrg
 from py2code.generator import CGenerator, HGenerator
+from org_analyze import ParserOrg
 from config import Spi, Port
 
-#PATH = "../msp430"
 PATH = "out"
 
 class Int(OArg):
@@ -61,11 +60,11 @@ def bitTgl(pin, reg):
 
 class PinDef:
     def __init__(self, row):
-        self.port = row[0][0]
-        self.pin = row[0][2]
-        self.af = row[1].strip()
-        self.direction = row[2]
-        self.name = row[3]
+        self.port = row['Port'][0]
+        self.pin = row['Port'][2]
+        self.af = row['Alt'].strip()
+        self.direction = row['Direction']
+        self.name = row['Desc']
 
     def port_name(self):
         return "P" + self.port
@@ -87,8 +86,8 @@ handleExports(c)
 spi = Spi()
 handleExports(spi)
 
-table = org.items[0].items[0]
-tablePins = [PinDef(x) for x in table.rows[1:] if len(x[2]) > 0]
+table = org.items[1]
+tablePins = [PinDef(r) for r in table.getDictRows()]
 
 c << OEmptyLine()
 for pin in tablePins:

@@ -1,6 +1,8 @@
 *~
+.vs/
 *.pyc
 build/
 dist/
 py2code.egg-info/
 out/
+out_ref/

@@ -1,6 +1,6 @@
-from py2code.parseOrg import ParserOrg
 import py2code.codegen as gen
 from py2code.generator import CGenerator, HGenerator
+from org_analyze import ParserOrg
 import re
 
 FILENAME = "examples/nrf24reg.org"
@@ -23,15 +23,15 @@ def toName(*list):
     return MODULE + "_" + ("_".join(list))
 
 class Row:
-    def __init__(self, line):
-        self.name = line[1]
-        self.mode = line[2]
-        self.desc = line[4]
+    def __init__(self, r):
+        self.name = r['Mnemonic']
+        self.mode = r['M']
+        self.desc = r['Description']
 
 class Bit(Row):
-    def __init__(self, line, reg):
-        Row.__init__(self, line)
-        self.bit = line[3]
+    def __init__(self, r, reg):
+        Row.__init__(self, r)
+        self.bit = r['Bit']
         self.reg = reg
         self.enumName = None
 
@@ -72,9 +72,9 @@ class Bit(Row):
         return enum
 
 class Register(Row):
-    def __init__(self, line):
-        Row.__init__(self, line)
-        self.adr = line[0]
+    def __init__(self, r):
+        Row.__init__(self, r)
+        self.adr = r['Adr']
         self.bits = []
 
     def isValid(self):
@@ -88,11 +88,11 @@ class Register(Row):
         self.bits.append(Bit(line, self))
 
 class Command:
-    def __init__(self, line):
-        self.name = line[0]
-        code = line[1].replace("A", "0")
+    def __init__(self, r):
+        self.name = r['Name']
+        code = r['Word'].replace("A", "0")
         self.code = int("0b" + code.replace("P", "0"), 2)
-        self.action = line[2].strip()
+        self.action = r['A'].strip()
 
     def getName(self):
         return toName("CMD", self.name)
@@ -180,7 +180,6 @@ def GenCommand0():
     m.doc = "Send command with zero arguments."
     return m
 
-
 def GenCommand3():
     m = gen.OMethod("command3", "uint32_t", 
                     [gen.OArg("cmd", "uint8_t"), 
@@ -198,8 +197,8 @@ p.parse()
 #
 registers = []
 reg = None
-for rowLine in p.items[0].items[0].rows[1:]:
-    if rowLine[0]:
+for rowLine in p.items[1].getDictRows():
+    if rowLine['Adr'].strip() != "":
         if reg:
             registers.append(reg)
         reg = Register(rowLine)
@@ -207,7 +206,7 @@ for rowLine in p.items[0].items[0].rows[1:]:
         reg.add(rowLine)
 
 commands = []
-for cmdLine in p.items[1].items[0].rows[1:]:
+for cmdLine in p.items[3].getDictRows():
     cmd = Command(cmdLine)
     if cmd.action:
         commands.append(cmd)

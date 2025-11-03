@@ -4,7 +4,7 @@
 from py2code.codegen import OClass, OMethod, OStruct, OMacro, OArg, OSwitch
 from py2code.codegen import write_file_n, handleExports
 from py2code.generator import CGenerator, HGenerator
-from py2code.parseOrg import ParserOrg
+from org_analyze import ParserOrg
 from config import Spi, Port
 
 #FILENAME = "stm32.org"
@@ -13,11 +13,11 @@ PATH = "out"
 
 class PinDef:
     def __init__(self, row):
-        self.port = row[0][0]
-        self.pin = row[0][1:]
-        self.af = row[1].strip()
-        self.desc = row[2]
-        self.direction = row[3]
+        self.port = row['Pin'][0]
+        self.pin = row['Pin'][1:]
+        self.af = row['AF'].strip()
+        self.desc = row['Description']
+        self.direction = row['Direction']
 
     def macro(self, func, reg):
         return OMacro(func+"_"+self.desc, "GPIO"+self.port+"->"+reg+" GPIO_Pin_"+self.pin)
@@ -42,8 +42,12 @@ handleExports(spi)
 c.m << "GPIO_InitTypeDef ioInit;"
 
 p.parse()
-table = p.items[0].items[0]
-table2 = [PinDef(x) for x in table.rows[1:] if len(x[2]) > 0 and x[2][0] != "["]
+
+#for i, item in enumerate(p.items):
+#    print(f"Item {i}: {type(item)}")
+
+table = p.items[1]
+table2 = [PinDef(x) for x in table.getDictRows() if len(x['Description']) > 0 and x['Description'][0] != "["]
 
 ports = list(set([pin.port for pin in table2]))  # all unique ports in the pins
 ports.sort()

@@ -3,8 +3,8 @@
 #
 from py2code.codegen import OClass, OMethod, OStruct, OMacro, OArg, OSwitch
 from py2code.codegen import write_file_n, handleExports
-from py2code.parseOrg import ParserOrg
 from py2code.generator import CGenerator, HGenerator
+from org_analyze import ParserOrg
 from config import Spi, Port
 
 FILENAME = "examples/c2000.org"
@@ -50,7 +50,7 @@ handleExports(spi)
 c.m << "EALLOW;"
 
 p.parse()
-table = p.items[0].items[0]
+table = p.items[1] # first header then table
 table2 = [PinDef(x) for x in table.rows[1:] if len(x[2]) > 0 and x[2][0] != "<"]
 
 pins = []
