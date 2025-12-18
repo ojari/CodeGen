@@ -134,17 +134,15 @@ class CSGenerator(CodeGenerator):
             f << "/// <summary>"
             f << "/// " + node.doc
             f << "/// </summary>"
-        if Mod.TEST in node.mods:
+        if node.got(Mod.TEST):
             f << "[TestClass]"
 
         post = ""
         if len(node.implements) > 0:
-            # if isLang(LANG_JAVA):
-            # 	post = " implements "
-            # else:
             post = " : "
             post += ", ".join(node.implements)
 
+        getsets = []
         for i in node.members:
             if isinstance(i, OArg) and (i.isGetter() or i.isSetter()):
                 p = OProperty(i.name, i.ctype)
@@ -153,7 +151,8 @@ class CSGenerator(CodeGenerator):
                     p.getter = ["return " + i.name + ";"]
                 if i.isSetter():
                     p.setter = [i.name + " = value;"]
-                node.members.append(p) # This might be risky, modifying during iteration. Let's add it to a new list.
+                getsets.append(p)
+        node.members.extend(getsets)
 
         with f.block(node.getMods() + "class " + node.name + post):
             first = True
@@ -179,10 +178,18 @@ class CGenerator(CodeGenerator):
         pre = ""
         if node.got(Mod.EXTERNAL):
             pre = "extern "
-        f << pre + node.define() + ";"
+        if node.initial is None:
+            f << pre + node.define() + ";"
+        elif isinstance(node.initial, str):
+            f << pre + node.define() + ";"
+        elif isinstance(node.initial, list):
+            f << pre + node.define() + " = {"
+            for item in node.initial:
+                f << item
+            f << "};"
 
     def visit_oemptyline(self, node, f):
-        if Mod.PUBLIC not in node.mods:
+        if not node.got(Mod.PUBLIC):
             f << ""
 
     def visit_omacro(self, node, f):
@@ -217,26 +224,25 @@ class CGenerator(CodeGenerator):
 
 class HGenerator(HeaderGenerator):
     def visit_oarg(self, node, f):
-        f << "extern " + node.define() + ";"
+        pre = ""
+        if node.got(Mod.EXTERNAL):
+            pre = "extern "
+        f << pre + node.define() + ";"
 
     def visit_oswitch(self, node, f):
         pass
 
     def visit_oemptyline(self, node, f):
-        if Mod.PUBLIC in node.mods:
+        if node.got(Mod.PUBLIC):
             f << ""
 
     def visit_omacro(self, node, f):
         if node.got(Mod.PUBLIC):
             f << "#define " + node.name + " " + node.value
 
-    def visit_oarg(self, node, f):
-        f << "extern " + node.define() + ";"
-
     def visit_omethod(self, node, f):
         if node.got(Mod.PUBLIC):
             f << "extern " + node.ctype + " " + node.getCFuncName() + " " + node.arg() + ";"
-
 
     def visit_oenum(self, node, f):
         with f.block("typedef enum ", node.name + ";"):
@@ -247,11 +253,9 @@ class HGenerator(HeaderGenerator):
         methods = [m for m in node.members if isinstance(m, OMethod)]
         attrs = [m for m in node.members if isinstance(m, OArg)]
         if len(attrs) > 0:
-            f << "typedef struct " + node.name
-            f << "{"
-            for a in attrs:
-                self.visit(a, f)
-            f << "}"
+            with f.block("typedef struct " + node.name):
+                for a in attrs:
+                    self.visit(a, f)
             f << node.name + "_t;"
 
         for m in methods:
@@ -259,7 +263,10 @@ class HGenerator(HeaderGenerator):
 
     def visit_ostruct(self, node, f):
         if node.got(Mod.PUBLIC):
-            node.gen(f)
+            with f.block("struct " + node.name):
+                for a in node.members:
+                    self.visit(a, f)
+            f << ";"
 
 class CPPGenerator(CodeGenerator):
     def visit_oarg(self, node, f):
