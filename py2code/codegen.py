@@ -220,13 +220,6 @@ class OEmptyLine(OBase):
     def __init__(self):
         OBase.__init__(self, None, None, {Mod.PUBLIC})
 
-    def genH(self, f):
-        if self.got(Mod.PUBLIC):
-            f << ""
-    
-    def genC(self, f):
-        if not self.got(Mod.PUBLIC):
-            f << ""
 
 class OMacro(OBase):
     def __init__(self, name, value):
@@ -278,22 +271,6 @@ class OEnum(OBase):
     def add(self, item: str):
         self.items.append(item)
 
-    def _writeC(self, f: OFile):
-        with f.block(self.getMods() + "enum " + self.name):
-            for i in self.items:
-                f << i + ","
-
-    def genCS(self, f: OFile):
-        self._writeC(f)
-    
-    def genH(self, f: OFile):
-        with f.block("typedef enum ", self.name+";"):
-            for i in self.items:
-                f << i + ","
-    
-    def genC(self, f: OFile):
-        pass
-
 def doBlock(f, name, items):
     with f.block(name):
         for i in items:
@@ -308,22 +285,6 @@ class OProperty(OBase):
 
         self.getter = []
         self.setter = []
-
-    def genCS(self, f):
-        if len(self.pre) > 0:
-            for line in self.pre:
-                f << line
-        with f.block(self.getMods() + self.define()):
-            if self.isGetter():
-                if len(self.getter) == 1:
-                    f << "get { " + self.getter[0] + " }"
-                else:
-                    doBlock(f, "get", self.getter)
-            if self.isSetter():
-                if len(self.setter) == 1:
-                    f << "set { " + self.setter[0] + " }"
-                else:
-                    doBlock(f, "set", self.setter)
 
 
 class OClass(OBase):
@@ -348,41 +309,6 @@ class OClass(OBase):
                 m << i.name+" = val;"
                 self << m
 
-    def genCS(self, f):
-        if len(self.doc) > 0:
-            f << "/// <summary>"
-            f << "/// " + self.doc
-            f << "/// </summary>"
-        if self.got(Mod.TEST):
-            f << "[TestClass]"
-
-        post = ""
-        if len(self.implements) > 0:
-            # if isLang(LANG_JAVA):
-            # 	post = " implements "
-            # else:
-            post = " : "
-            post += ", ".join(self.implements)
-
-
-        for i in self.members:
-            if isinstance(i, OArg) and (i.isGetter() or i.isSetter()):
-                p = OProperty(i.name, i.ctype)
-                p.mods = {Mod.PUBLIC} | (i.mods & {Mod.GETTER, Mod.SETTER})
-                if i.isGetter():
-                    p.getter = ["return " + i.name + ";"]
-                if i.isSetter():
-                    p.setter = [i.name + " = value;"]
-                node.members.append(p) # This might be risky, modifying during iteration. Let's add it to a new list.
-
-        with f.block(self.getMods() + "class " + self.name + post):
-            first = True
-            for m in self.members:
-                if not first and not isinstance(m, OArg):
-                    f << ""
-                first = False
-                self.visit(m, f)
-
 
 class OStruct(OBase):
     def __init__(self, name: str, mods={Mod.PUBLIC}):
@@ -393,12 +319,6 @@ class OStruct(OBase):
         m.parent = self
         self.members.append(m)
         return self
-
-    def gen(self, f):
-        with f.block("typedef struct"):
-            for m in self.members:
-                m.generate(f)
-        f << self.name + "_t;"
 
 
 class OSwitch(OBase):
