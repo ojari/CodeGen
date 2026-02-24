@@ -135,7 +135,8 @@ class OFile(object):
             return self
 
         if s in ["}", "};"]:
-            self.indent -= 1
+            if self.indent > 0:
+                self.indent -= 1
         #print ("\t"*self.indent) + self.line
         if s in ['public:', 'protected:', 'private:']:
             self.f.write(s + NEWLINE)
